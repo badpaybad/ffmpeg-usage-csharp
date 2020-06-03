@@ -12,16 +12,35 @@ namespace Ffmpeg.Core
     {
         static FfmpegCommandRunner()
         {
-            var ping = new FfmpegCommandRunner().InternalRun($"\"{Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin")}/ffmpeg.exe\" -version").GetAwaiter().GetResult();
+            //var ping = new FfmpegCommandRunner().InternalRun($"\"{Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin")}/ffmpeg.exe\" -version" ,"ffmpeg -version");
 
-            Console.WriteLine(ping.Output);
+            //Console.WriteLine(ping.Output);
         }
-        public async Task<FfmpegCommandResult> Run(string cmdLine)
+
+        public FfmpegCommandResult Run(FfmpegCommandOutput cmd)
         {
-            return await InternalRun(cmdLine);
-        }
+            List<FfmpegCommandResult> subResult = new List<FfmpegCommandResult>();
 
-        private async Task<FfmpegCommandResult> InternalRun(string cmdLine)
+            if (cmd.SubFileOutput != null && cmd.SubFileOutput.Count > 0)
+            {
+                foreach (var subCmd in cmd.SubFileOutput)
+                {
+                    subResult.Add(InternalRun(subCmd.FfmpegCommand, subCmd.FileOutput));
+                }
+            }
+
+            var mainCmdResult = InternalRun(cmd.FfmpegCommand, cmd.FileOutput);
+
+            mainCmdResult.SubResult = subResult;
+
+            return mainCmdResult;
+        }
+        //public FfmpegCommandResult RunCmd(string cmdLine, string fileOutput)
+        //{
+        //    return InternalRun(cmdLine, fileOutput);
+        //}
+
+        private FfmpegCommandResult InternalRun(string cmdLine, string fileOutput)
         {
             Stopwatch sw = Stopwatch.StartNew();
             string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
@@ -46,24 +65,21 @@ namespace Ffmpeg.Core
             cmd.StandardInput.Flush();
             cmd.StandardInput.Close();
 
-            await Task.Delay(1000);
-
             var output = new List<string>();
 
-            try
-            {
-                while (cmd.StandardOutput.Peek() > -1)
+            cmd.OutputDataReceived += new DataReceivedEventHandler(
+                (s, e) =>
                 {
-                    output.Add(cmd.StandardOutput.ReadLine());
-                }
-
-                while (cmd.StandardError.Peek() > -1)
+                    if (!string.IsNullOrEmpty(e.Data)) output.Add(e.Data);
+                });
+            cmd.ErrorDataReceived += new DataReceivedEventHandler(
+                (s, e) =>
                 {
-                    output.Add(cmd.StandardError.ReadLine());
-                }
-            }
-            catch { }
+                    if (!string.IsNullOrEmpty(e.Data)) output.Add(e.Data);
+                });
 
+            cmd.BeginOutputReadLine();
+            cmd.BeginErrorReadLine();
             cmd.WaitForExit();
 
             try
@@ -81,11 +97,18 @@ namespace Ffmpeg.Core
             catch { }
 
             sw.Stop();
+            string outstring = string.Join("\r\n", output.ToArray());
+            bool isOk = outstring.IndexOf("Error", StringComparison.OrdinalIgnoreCase) <= 0;
+            if (!isOk)
+            {
+                Console.WriteLine("ERROR: " + fileOutput);
+            }
             return new FfmpegCommandResult
             {
                 ConvertInMiliseconds = sw.ElapsedMilliseconds - 1000,
-                Output = string.Join("\r\n", output.ToArray()),
-                Success = true
+                Output = outstring,
+                Success = isOk,
+                FfmpegCmd = cmdLine
             };
         }
 

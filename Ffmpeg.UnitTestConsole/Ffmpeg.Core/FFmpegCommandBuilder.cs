@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Ffmpeg.Core
@@ -12,6 +13,10 @@ namespace Ffmpeg.Core
         string _fileAudio;
         string _fileOutput;
         int _duration;
+        string _videoScale = "1080:720";
+
+        string _dirOutput;
+        string _fileOutputName;
         public FFmpegCommandBuilder AddFileInput(params string[] files)
         {
             foreach (var file in files)
@@ -29,34 +34,86 @@ namespace Ffmpeg.Core
         public FFmpegCommandBuilder WithFileOutput(string file)
         {
             _fileOutput = file;
+
+            _fileOutput = _fileOutput.Replace("\\", "/");
+
+            var idx = _fileOutput.LastIndexOf("/");
+
+            _dirOutput = _fileOutput.Substring(0, idx);
+            _fileOutputName = _fileOutput.Substring(idx + 1);
             return this;
         }
-        public FFmpegCommandBuilder WithVideoDuration(int duration)
+        public FFmpegCommandBuilder WithVideoDurationInSeconds(int duration)
         {
             _duration = duration;
             return this;
         }
-        public string ToCommand()
+        public FfmpegCommandOutput ToCommand()
         {
-            var timeForEachImage = Math.Round((decimal)_duration / _fileInput.Count, 0);
+            var timeForEachImage = (int)Math.Round((decimal)_duration / _fileInput.Count, 0);
             if (timeForEachImage <= 0) timeForEachImage = 1;
 
             var timeFadeOut = timeForEachImage - 1;
             if (timeFadeOut <= 0) timeFadeOut = 1;
 
+            try
+            {
+                File.Delete(_fileOutput);
+            }
+            catch { }
+
+            var mainCmd = BuildFfmpegCommandTransitionFade(_fileInput, _fileOutput, timeForEachImage, timeFadeOut);
+            if (mainCmd.Length <= 2047)
+            {
+                //https://support.microsoft.com/en-us/help/830473/command-prompt-cmd-exe-command-line-string-limitation
+                return new FfmpegCommandOutput
+                {
+                    FileOutput = _fileOutput,
+                    FfmpegCommand = mainCmd
+                };
+            }
+
+            List<FfmpegCommandOutput> subFileList = new List<FfmpegCommandOutput>();
+
+            SplitToRun(_fileInput, (itms, idx) =>
+            {
+                var subFileName = Path.Combine(_dirOutput, idx + "_" + _fileOutputName);
+
+                var subCmd = BuildFfmpegCommandTransitionFade(itms, subFileName, timeForEachImage, timeFadeOut);
+
+                subFileList.Add(new FfmpegCommandOutput
+                {
+                    FfmpegCommand = subCmd,
+                    FileOutput = subFileName
+                });
+            });
+
+            var cmdMain = new FfmpegCommandOutput
+            {
+                FfmpegCommand = BuildFfmpegConcatVideo(subFileList.Select(i => i.FileOutput).ToList(), _fileOutput),
+                FileOutput = _fileOutput,
+                SubFileOutput = subFileList
+            };
+
+            return cmdMain;
+        }
+
+        public string BuildFfmpegCommandTransitionFade(List<string> fileInput, string fileOutput, int timeForEachImage, int timeFadeOut)
+        {
             string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
+
             string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
 
             string cmd = $"\"{ffmpegCmd}\"";
 
             string filterLoopInput = "";
             string filterAfter = "";
-            for (int i = 0; i < _fileInput.Count; i++)
+            for (int i = 0; i < fileInput.Count; i++)
             {
-                string f = _fileInput[i];
+                string f = fileInput[i];
                 cmd += $" -loop 1 -t {timeForEachImage} -i \"{f}\"";
 
-                filterLoopInput += $"[{i}:v]scale = 1280:720:force_original_aspect_ratio = decrease,pad = 1280:720:(ow - iw) / 2:(oh - ih) / 2,setsar = 1,fade = t =out:st = {timeFadeOut}:d = 1[v{i}];";
+                filterLoopInput += $"[{i}:v]scale = {_videoScale}:force_original_aspect_ratio = decrease,pad = {_videoScale}:(ow - iw) / 2:(oh - ih) / 2,setsar = 1,fade = t =out:st = {timeFadeOut}:d = 1[v{i}];";
 
                 filterAfter += $"[v{i}]";
             }
@@ -66,19 +123,47 @@ namespace Ffmpeg.Core
             {
                 cmd += $" -i \"{_fileAudio}\"";
             }
-            cmd += $" -filter_complex \"{filterLoopInput}{filterAfter}concat = n = {_fileInput.Count}:v = 1:a = 0,format = yuv420p[v]\"";
-            cmd += $" -map \"[v]\" -map {_fileInput.Count}:a -veryfast \"{_fileOutput}\"";
+            cmd += $" -filter_complex \"{filterLoopInput}{filterAfter}concat = n = {fileInput.Count}:v = 1:a = 0,format = yuv420p[v]\"";
+            cmd += $" -map \"[v]\" -map {fileInput.Count}:a -shortest \"{fileOutput}\"";
 
             while (cmd.IndexOf("\\") >= 0)
             {
                 cmd = cmd.Replace("\\", "/");
             }
 
-            try {
-                File.Delete(_fileOutput);
-            } catch { }
-
             return cmd;
+        }
+
+        public string BuildFfmpegConcatVideo(List<string> filesInput, string fileOutput)
+        {
+            string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
+
+            string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
+
+            return $"\"{ffmpegCmd}\" -i \"concat: {string.Join("|", filesInput)}\" -c copy \"{fileOutput}\"";
+        }
+
+        public static void SplitToRun<T>(List<T> allItems, Action<List<T>, int> doBatch, int batchSize = 10)
+        {
+            if (allItems == null || allItems.Count == 0) return;
+            var total = allItems.Count;
+            var skip = 0;
+            int batchCount = 0;
+            while (true)
+            {
+                var batch = allItems.Skip(skip).Take(batchSize).Distinct().ToList();
+
+                if (batch == null || batch.Count == 0) { return; }
+
+                doBatch(batch, batchCount);
+
+                batchCount++;
+
+                skip = skip + batchSize;
+
+                total = total - batchSize;
+            }
+
         }
     }
 }

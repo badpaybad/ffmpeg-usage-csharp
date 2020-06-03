@@ -23,10 +23,43 @@
     <None Update="ImageTest\imgs\2.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="ImageTest\imgs\beach_tropics_sea_sand_summer_84726_1920x1080.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1124-143519-81-52-PNHXCQ1539964391.jpeg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1127-142828-0-RK3BGT1539925047.jpeg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1127-142828-0-ZTPSPC1539925044.jpeg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1128-143232-19-1539946367.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1128-143232-9-1539946362.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="ImageTest\results\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="ImageTest\imgs\1.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="ImageTest\imgs\2.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="ImageTest\imgs\beach_tropics_sea_sand_summer_84726_1920x1080.jpg" />
+    <Resource Include="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1124-143519-81-52-PNHXCQ1539964391.jpeg" />
+    <Resource Include="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1127-142828-0-RK3BGT1539925047.jpeg" />
+    <Resource Include="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1127-142828-0-ZTPSPC1539925044.jpeg" />
+    <Resource Include="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1128-143232-19-1539946367.png" />
+    <Resource Include="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1128-143232-9-1539946362.png" />
   </ItemGroup>
 
 </Project>

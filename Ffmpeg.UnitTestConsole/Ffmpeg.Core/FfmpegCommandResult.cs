@@ -1,13 +1,20 @@
-﻿namespace Ffmpeg.Core
+﻿using System.Collections.Generic;
+
+namespace Ffmpeg.Core
 {
     public class FfmpegCommandResult
     {
+        /// <summary>
+        /// no mater what video still rendered
+        /// </summary>
         public bool Success { get; set; }
 
         public string Output { get; set; }
 
         public long ConvertInMiliseconds { get; set; }
+        public string FfmpegCmd { get;  set; }
 
+        public List<FfmpegCommandResult> SubResult { get; set; }
     }
 }
 

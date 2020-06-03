@@ -11,23 +11,24 @@ namespace Ffmpeg.UnitTestConsole
 {
     class Program
     {
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-            List<Task<FfmpegSampleUsage.SampleResult>> cmds = new List<Task<FfmpegSampleUsage.SampleResult>>();
+            Task.Run(async () =>
+          {
+              List<Task< FfmpegSampleUsageRenderVideo60Seconds.SampleResult >> resultAsync = new List<Task<FfmpegSampleUsageRenderVideo60Seconds.SampleResult>>();
+              for (var i = 0; i < 1; i++)
+              {
+                  resultAsync.Add(Task.Run(() => new FfmpegSampleUsageRenderVideo60Seconds().Convert()));
 
-            for (var i = 0; i < 1; i++)
-            {
-                cmds.Add(new FfmpegSampleUsage().Convert());
-            }
+              }
+              var result = await Task.WhenAll(resultAsync);
+              Console.WriteLine($"Total in miliseconds: {result.Sum(i => i.ConvertResult.ConvertInMiliseconds)}");
 
-            var result = await Task.WhenAll(cmds);
-
-            Console.WriteLine($"Total: {result.Sum(i=>i.ConvertResult.ConvertInMiliseconds)}");
-
-            foreach (var r in result)
-            {
-                Console.WriteLine($"Success:{r.ConvertResult.Success}:InSeconds:{r.ConvertResult.ConvertInMiliseconds / 1000}=>{r.FileVideo}");
-            }
+              foreach (var r in result)
+              {
+                  Console.WriteLine($"Success:{r.ConvertResult.Success}:InSeconds:{r.ConvertResult.ConvertInMiliseconds / 1000}=>{r.FileVideo}");
+              }
+          });
 
             while (true)
             {
@@ -42,10 +43,10 @@ namespace Ffmpeg.UnitTestConsole
         }
     }
 
-    public class FfmpegSampleUsage
+    public class FfmpegSampleUsageRenderVideo60Seconds
     {
         Random _rnd = new Random();
-        public FfmpegSampleUsage()
+        public FfmpegSampleUsageRenderVideo60Seconds()
         {
 
         }
@@ -61,12 +62,12 @@ namespace Ffmpeg.UnitTestConsole
                 .Select(i => i).ToList();
         }
 
-        public async Task<SampleResult> Convert()
+        public SampleResult Convert()
         {
             List<string> audios = ListAudioFile();
             string audioFile = audios[_rnd.Next(0, audios.Count - 1)];
 
-            var dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"ImageTest/results");
+            var dir = Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageTest/results"));
 
             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
@@ -75,12 +76,12 @@ namespace Ffmpeg.UnitTestConsole
             var cmd = new FFmpegCommandBuilder().WithFileAudio(audioFile)
                 .AddFileInput(ListImageFile().ToArray())
                 .WithFileOutput(fileOutput)
-                .WithVideoDuration(60)
+                .WithVideoDurationInSeconds(60)
                 .ToCommand();
 
             Console.WriteLine(fileOutput);
 
-            var r = await new FfmpegCommandRunner().Run(cmd);
+            var r = new FfmpegCommandRunner().Run(cmd);
 
             return new SampleResult
             {
