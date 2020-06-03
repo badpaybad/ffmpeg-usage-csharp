@@ -81,7 +81,7 @@ namespace Ffmpeg.UnitTestConsole
 
             Console.WriteLine(fileOutput);
 
-            var r = new FfmpegCommandRunner().Run(cmd);
+            var r = new FfmpegCommandExecuter().Run(cmd);
 
             return new SampleResult
             {

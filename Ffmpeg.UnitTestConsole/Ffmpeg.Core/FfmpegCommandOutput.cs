@@ -10,5 +10,7 @@ namespace Ffmpeg.Core
 
         public List<FfmpegCommandOutput> SubFileOutput { get; set; }
 
+        //public string ConcatSubFileTxt { get; set; }
+
     }
 }

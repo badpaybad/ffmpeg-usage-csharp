@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 namespace Ffmpeg.Core
 {
 
-    public class FfmpegCommandRunner
+    public class FfmpegCommandExecuter
     {
-        static FfmpegCommandRunner()
+        static FfmpegCommandExecuter()
         {
             //var ping = new FfmpegCommandRunner().InternalRun($"\"{Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin")}/ffmpeg.exe\" -version" ,"ffmpeg -version");
 
@@ -42,6 +42,12 @@ namespace Ffmpeg.Core
 
         private FfmpegCommandResult InternalRun(string cmdLine, string fileOutput)
         {
+            try
+            {
+                File.Delete(fileOutput);
+            }
+            catch { }
+
             Stopwatch sw = Stopwatch.StartNew();
             string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
 

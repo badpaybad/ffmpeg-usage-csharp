@@ -10,3 +10,7 @@ ffmpeg -i audio.mp3 -i image1.png -i image2.png -filter_complex \
 -map "[outv]" -map 0:a -c:v libx264 -c:a copy -movflags +faststart -shortest out.mp4
 
 ffmpeg -i "concat:input1.mp4|input2.mp4|input3.mp4" -c copy output.mp4
+
+ffmpeg -i opening.mkv -i episode.mkv -i ending.mkv \
+  -filter_complex "[0:v] [0:a] [1:v] [1:a] [2:v] [2:a] concat=n=3:v=1:a=1 [v] [a]" \
+  -map "[v]" -map "[a]" output.mkv

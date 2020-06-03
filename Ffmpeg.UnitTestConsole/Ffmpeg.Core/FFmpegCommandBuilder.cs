@@ -56,14 +56,8 @@ namespace Ffmpeg.Core
             var timeFadeOut = timeForEachImage - 1;
             if (timeFadeOut <= 0) timeFadeOut = 1;
 
-            try
-            {
-                File.Delete(_fileOutput);
-            }
-            catch { }
-
             var mainCmd = BuildFfmpegCommandTransitionFade(_fileInput, _fileOutput, timeForEachImage, timeFadeOut);
-            if (mainCmd.Length <= 2047)
+            if (mainCmd.Length <=4000)
             {
                 //https://support.microsoft.com/en-us/help/830473/command-prompt-cmd-exe-command-line-string-limitation
                 return new FfmpegCommandOutput
@@ -113,7 +107,7 @@ namespace Ffmpeg.Core
                 string f = fileInput[i];
                 cmd += $" -loop 1 -t {timeForEachImage} -i \"{f}\"";
 
-                filterLoopInput += $"[{i}:v]scale = {_videoScale}:force_original_aspect_ratio = decrease,pad = {_videoScale}:(ow - iw) / 2:(oh - ih) / 2,setsar = 1,fade = t =out:st = {timeFadeOut}:d = 1[v{i}];";
+                filterLoopInput += $"[{i}:v]scale={_videoScale}:force_original_aspect_ratio=decrease,pad={_videoScale}:(ow-iw)/2:(oh-ih)/2,setsar=1,fade=t=out:st={timeFadeOut}:d=1[v{i}];";
 
                 filterAfter += $"[v{i}]";
             }
@@ -123,7 +117,7 @@ namespace Ffmpeg.Core
             {
                 cmd += $" -i \"{_fileAudio}\"";
             }
-            cmd += $" -filter_complex \"{filterLoopInput}{filterAfter}concat = n = {fileInput.Count}:v = 1:a = 0,format = yuv420p[v]\"";
+            cmd += $" -filter_complex \"{filterLoopInput}{filterAfter} concat=n={fileInput.Count}:v=1:a=0,format=yuv420p[v]\"";
             cmd += $" -map \"[v]\" -map {fileInput.Count}:a -shortest \"{fileOutput}\"";
 
             while (cmd.IndexOf("\\") >= 0)
@@ -140,7 +134,19 @@ namespace Ffmpeg.Core
 
             string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
 
-            return $"\"{ffmpegCmd}\" -i \"concat: {string.Join("|", filesInput)}\" -c copy \"{fileOutput}\"";
+            // return $"\"{ffmpegCmd}\" -i \"concat: {string.Join("|", filesInput)}\" -c copy \"{fileOutput}\"";
+            var filter = "";
+
+            for (int i = 0; i < filesInput.Count; i++)
+            {
+                string f = filesInput[i];
+                ffmpegCmd += $" -i \"{f}\"";
+                filter += $"[{i}:v][{i}:a]";
+            }
+
+            ffmpegCmd += $" -filter_complex \"{filter} concat=n={filesInput.Count}:v=1:a=1 [v] [a]\"";
+            ffmpegCmd += $" -map \"[v]\" -map \"[a]\" -shortest \"{fileOutput}\"";
+            return ffmpegCmd;
         }
 
         public static void SplitToRun<T>(List<T> allItems, Action<List<T>, int> doBatch, int batchSize = 10)
