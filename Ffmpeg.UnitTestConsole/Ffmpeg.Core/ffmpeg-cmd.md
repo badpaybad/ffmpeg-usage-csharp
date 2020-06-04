@@ -14,3 +14,12 @@ ffmpeg -i "concat:input1.mp4|input2.mp4|input3.mp4" -c copy output.mp4
 ffmpeg -i opening.mkv -i episode.mkv -i ending.mkv \
   -filter_complex "[0:v] [0:a] [1:v] [1:a] [2:v] [2:a] concat=n=3:v=1:a=1 [v] [a]" \
   -map "[v]" -map "[a]" output.mkv
+
+
+  Heh, interesting task. So I think solution is
+
+ffmpeg -i 1.ts -i 2.ts -filter_complex "[0:v][1:v]overlay=x='if(lte(-w+(t)*100,w/2),-w+(t)*100,w/2)':y=0[out]" -map '[out]' -y out.mp4
+This filter graph moves second picture from left to right until it reaches half of the screen (w/2). So all you need to modify is w/2 in this expression. The same for some static stop point (100 pixels):
+
+ffmpeg -i 1.ts -i 2.ts -filter_complex "[0:v][1:v]overlay=x='if(lte(-w+(t)*100,100),-w+(t)*100,100)':y=0[out]" -map '[out]' -y out.mp4
+Hope it helps.
