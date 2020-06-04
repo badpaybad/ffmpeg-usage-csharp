@@ -261,7 +261,7 @@ namespace Ffmpeg.Core
             }
             else
             {
-                cmd += $" -map \"[v]\" -map -shortest \"{fileOutput}\"";
+                cmd += $" -map \"[v]\" -shortest \"{fileOutput}\"";
             }
 
             return cmd;
