@@ -14,6 +14,7 @@ namespace Ffmpeg.UnitTestConsole
             Task.Run(async () =>
           {
               List<Task< FfmpegSampleUsageRenderImagesToVideo.SampleResult >> resultAsync = new List<Task<FfmpegSampleUsageRenderImagesToVideo.SampleResult>>();
+              //if want to do stress test
               for (var i = 0; i < 1; i++)
               {
                   resultAsync.Add(Task.Run(() => new FfmpegSampleUsageRenderImagesToVideo().Convert()));
