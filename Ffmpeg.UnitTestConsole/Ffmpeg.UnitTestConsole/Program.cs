@@ -74,9 +74,10 @@ namespace Ffmpeg.UnitTestConsole
             string fileOutput = Path.Combine(dir, $"video_{DateTime.Now.Ticks}.mp4");
 
             var cmd = new FFmpegCommandBuilder().WithFileAudio(audioFile)
-                .AddFileInput(ListImageFile().Take(4).ToArray())
+                .AddFileInput(ListImageFile().Take(30).ToArray())
                 .WithFileOutput(fileOutput)
-                .WithVideoDurationInSeconds(4)
+                .WithVideoDurationInSeconds(60)
+                .WithFadeDurationInSeconds(1)
                 .ToCommand();
 
             Console.WriteLine(fileOutput);

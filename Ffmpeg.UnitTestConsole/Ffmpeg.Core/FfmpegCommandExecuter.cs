@@ -33,6 +33,18 @@ namespace Ffmpeg.Core
 
             mainCmdResult.SubResult = subResult;
 
+            Task.Run(() =>
+            {
+                foreach (var subCmd in cmd.SubFileOutput)
+                {
+                    try
+                    {
+                        File.Delete(subCmd.FileOutput);
+                    }
+                    catch { }
+                }
+            });
+
             return mainCmdResult;
         }
         //public FfmpegCommandResult RunCmd(string cmdLine, string fileOutput)
