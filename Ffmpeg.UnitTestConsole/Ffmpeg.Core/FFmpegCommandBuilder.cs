@@ -57,6 +57,8 @@ namespace Ffmpeg.Core
         string _fileOutputName;
         private decimal _fadeDuration = 1;
 
+        int _audioLength;
+
         Random _rnd = new Random();
 
         public FFmpegCommandBuilder AddFileInput(params string[] files)
@@ -85,6 +87,12 @@ namespace Ffmpeg.Core
             _fileOutputName = _fileOutput.Substring(idx + 1);
             return this;
         }
+
+        /// <summary>
+        /// should depend on audio length
+        /// </summary>
+        /// <param name="duration"></param>
+        /// <returns></returns>
         public FFmpegCommandBuilder WithVideoDurationInSeconds(decimal duration)
         {
             _videoDuration = duration;
@@ -95,6 +103,7 @@ namespace Ffmpeg.Core
             _fadeDuration = duration;
             return this;
         }
+      
         public FfmpegCommandLine ToCommand()
         {
             if (_fileInput == null || _fileInput.Count == 0) throw new Exception("No input file. please call function AddFileInput");
@@ -215,14 +224,14 @@ namespace Ffmpeg.Core
             return cmd;
         }
 
-        public string BuildFfmpegConcatVideo(List<string> filesInput, string fileOutput, decimal timeForEachImage, decimal fadeDuration
+        public string BuildFfmpegConcatVideo(List<string> filesInput, string fileOutput, decimal timeForEachInput, decimal fadeDuration
             , bool allowAddAudio)
         {
 
-            timeForEachImage = Math.Round(timeForEachImage, 1);
+            timeForEachInput = Math.Round(timeForEachInput, 1);
             fadeDuration = Math.Round(fadeDuration, 1);
 
-            var timeFadeOut = timeForEachImage - fadeDuration;
+            var timeFadeOut = timeForEachInput - fadeDuration;
             string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
 
             string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
@@ -258,7 +267,7 @@ namespace Ffmpeg.Core
             return cmd;
         }
 
-        public static void SplitToRun<T>(List<T> allItems, Action<List<T>, int> doBatch, int batchSize = 2)
+        public void SplitToRun<T>(List<T> allItems, Action<List<T>, int> doBatch, int batchSize = 2)
         {
             if (allItems == null || allItems.Count == 0) return;
             var total = allItems.Count;
@@ -280,6 +289,7 @@ namespace Ffmpeg.Core
             }
 
         }
+
     }
 }
 
