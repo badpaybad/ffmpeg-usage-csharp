@@ -19,6 +19,11 @@ namespace Ffmpeg.Core
 
         public FfmpegConvertedResult Run(FfmpegCommandLine cmd)
         {
+            if (cmd.IsValid() == false)
+            {
+                throw new Exception("Not valid ffmpeg command, because the commandline over 8000 character");
+            }
+
             List<FfmpegConvertedResult> subResult = new List<FfmpegConvertedResult>();
 
             if (cmd.SubFileOutput != null && cmd.SubFileOutput.Count > 0)
