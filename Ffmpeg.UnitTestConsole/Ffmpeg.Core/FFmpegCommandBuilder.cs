@@ -12,12 +12,12 @@ namespace Ffmpeg.Core
 
         string _fileAudio;
         string _fileOutput;
-        int _videoDuration;
+        decimal _videoDuration;
         string _videoScale = "1080:720";
 
         string _dirOutput;
         string _fileOutputName;
-        private int _fadeDuration=1;
+        private decimal _fadeDuration=1;
 
         public FFmpegCommandBuilder AddFileInput(params string[] files)
         {
@@ -45,19 +45,19 @@ namespace Ffmpeg.Core
             _fileOutputName = _fileOutput.Substring(idx + 1);
             return this;
         }
-        public FFmpegCommandBuilder WithVideoDurationInSeconds(int duration)
+        public FFmpegCommandBuilder WithVideoDurationInSeconds(decimal duration)
         {
             _videoDuration = duration;
             return this;
         }
-        public FFmpegCommandBuilder WithFadeDurationInSeconds(int duration)
+        public FFmpegCommandBuilder WithFadeDurationInSeconds(decimal duration)
         {
             _fadeDuration = duration;
             return this;
         }
         public FfmpegCommandOutput ToCommand()
         {
-            var timeForEachImage = (int)Math.Round((decimal)_videoDuration / _fileInput.Count, 0);            
+            var timeForEachImage = Math.Round((decimal)_videoDuration / _fileInput.Count, 0);            
             if (timeForEachImage <= 1) timeForEachImage = 2;
             var fadeDuration = _fadeDuration;
             if (fadeDuration > timeForEachImage)
@@ -95,8 +95,11 @@ namespace Ffmpeg.Core
             return cmdMain;
         }
 
-        public string BuildFfmpegCommandTransitionXFade(List<string> fileInput, string fileOutput, int timeForEachImage, int duration, string fadeMethod= "distance") {
+        public string BuildFfmpegCommandTransitionXFade(List<string> fileInput, string fileOutput, decimal timeForEachImage, decimal fadeDuration, string fadeMethod= "distance") {
             //https://trac.ffmpeg.org/wiki/Xfade
+
+            timeForEachImage = Math.Round(timeForEachImage, 1);
+            fadeDuration = Math.Round(fadeDuration, 1);
 
             string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
 
@@ -107,7 +110,7 @@ namespace Ffmpeg.Core
             string filterFadeIndex ="";
             string filterFadeConcat = "";
             string filterScaleImage = "";
-            var offset = timeForEachImage - duration;
+            var offset = timeForEachImage - fadeDuration;
             
             for (int i = 0; i < fileInput.Count; i++)
             {
@@ -118,7 +121,7 @@ namespace Ffmpeg.Core
                 filterFadeIndex += $"[v{i}]";              
             }
            
-            cmd += $" -filter_complex \"{filterScaleImage}{filterFadeIndex}xfade=transition={fadeMethod}:duration={duration}:offset={offset},format=yuv420p[v]\"";
+            cmd += $" -filter_complex \"{filterScaleImage}{filterFadeIndex}xfade=transition={fadeMethod}:duration={fadeDuration}:offset={offset},format=yuv420p[v]\"";
             cmd += $" -map \"[v]\" -shortest \"{fileOutput}\"";
 
             while (cmd.IndexOf("\\") >= 0)
