@@ -23,3 +23,5 @@ This filter graph moves second picture from left to right until it reaches half 
 
 ffmpeg -i 1.ts -i 2.ts -filter_complex "[0:v][1:v]overlay=x='if(lte(-w+(t)*100,100),-w+(t)*100,100)':y=0[out]" -map '[out]' -y out.mp4
 Hope it helps.
+
+ffmpeg -y -i xxx.mp4 -ignore_loop 0 -i xxx.gif -filter_complex "[1:v]scale=1080:1920[ovrl];[0:v][ovrl]overlay=0:0" -frames:v 900 -codec:a copy -codec:v libx264 -max_muxing_queue_size 2048 video.mp4

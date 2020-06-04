@@ -267,6 +267,22 @@ namespace Ffmpeg.Core
             return cmd;
         }
 
+
+        string BuildGiftOverlayCommand( string fileGift, int fromSeconds)
+        {
+            string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
+
+            var frame = fromSeconds * 24;
+
+            var fileVideo = Path.Combine(_dirOutput,  "g_" + _fileOutputName);
+
+            string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
+
+            string cmd= $"\"{ffmpegCmd}\" -y -i \"{fileVideo}\" -ignore_loop 0 -i \"{fileGift}\" -filter_complex \"[1:v]scale = {_videoScale}[ovrl];[0:v][ovrl]overlay = 0:0\" -frames:v {frame} -codec:a copy -codec:v libx264 -max_muxing_queue_size 2048 \"{_fileOutput}\"";
+
+            return cmd;
+        }
+
         public void SplitToRun<T>(List<T> allItems, Action<List<T>, int> doBatch, int batchSize = 2)
         {
             if (allItems == null || allItems.Count == 0) return;
