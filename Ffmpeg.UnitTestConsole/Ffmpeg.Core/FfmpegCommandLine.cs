@@ -2,13 +2,13 @@
 
 namespace Ffmpeg.Core
 {
-    public class FfmpegCommandOutput
+    public class FfmpegCommandLine
     {
         public string FileOutput { get; set; }
 
         public string FfmpegCommand { get; set; }
 
-        public List<FfmpegCommandOutput> SubFileOutput { get; set; }
+        public List<FfmpegCommandLine> SubFileOutput { get; set; }
 
         //public string ConcatSubFileTxt { get; set; }
 

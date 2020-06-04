@@ -2,7 +2,7 @@
 
 namespace Ffmpeg.Core
 {
-    public class FfmpegCommandResult
+    public class FfmpegConvertedResult
     {
         /// <summary>
         /// no mater what video still rendered
@@ -14,7 +14,7 @@ namespace Ffmpeg.Core
         public long ConvertInMiliseconds { get; set; }
         public string FfmpegCmd { get;  set; }
 
-        public List<FfmpegCommandResult> SubResult { get; set; }
+        public List<FfmpegConvertedResult> SubResult { get; set; }
     }
 }
 

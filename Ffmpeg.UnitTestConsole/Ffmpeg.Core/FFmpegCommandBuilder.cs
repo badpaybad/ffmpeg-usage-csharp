@@ -9,7 +9,7 @@ namespace Ffmpeg.Core
     public class FFmpegCommandBuilder
     {
         List<string> _xfade = new List<string> {
-        "fade",
+      //  "fade",
 "wipeleft",
 "wiperight",
 "wipeup",
@@ -95,7 +95,7 @@ namespace Ffmpeg.Core
             _fadeDuration = duration;
             return this;
         }
-        public FfmpegCommandOutput ToCommand()
+        public FfmpegCommandLine ToCommand()
         {
             var timeForEachImage = _videoDuration / _fileInput.Count;
 
@@ -105,7 +105,7 @@ namespace Ffmpeg.Core
                 fadeDuration = timeForEachImage;
             }
 
-            List<FfmpegCommandOutput> subFileList = new List<FfmpegCommandOutput>();
+            List<FfmpegCommandLine> subFileList = new List<FfmpegCommandLine>();
 
             if (_fileInput.Count % 2 != 0)
             {
@@ -118,14 +118,14 @@ namespace Ffmpeg.Core
 
                 var subCmd = BuildFfmpegCommandImageTransitionXFade(itms, subFileName, timeForEachImage, fadeDuration, _xfade[_rnd.Next(0, _xfade.Count - 1)]);
 
-                subFileList.Add(new FfmpegCommandOutput
+                subFileList.Add(new FfmpegCommandLine
                 {
                     FfmpegCommand = subCmd,
                     FileOutput = subFileName
                 });
             });
 
-            var cmdMain = new FfmpegCommandOutput
+            var cmdMain = new FfmpegCommandLine
             {
                 FfmpegCommand = BuildFfmpegConcatVideo(subFileList.Select(i => i.FileOutput).ToList(), _fileOutput, timeForEachImage * 2, fadeDuration),
                 FileOutput = _fileOutput,
@@ -205,7 +205,7 @@ namespace Ffmpeg.Core
             {
                 string f = filesInput[i];
                 cmd += $" -i \"{f}\"";
-                filterFadeVideo += $"[{i}:v]scale={_videoScale}:force_original_aspect_ratio=decrease,pad={_videoScale}:(ow-iw)/2:(oh-ih)/2,setsar=1,fade=t=out:st={timeFadeOut}:d={fadeDuration}[v{i}];";
+                filterFadeVideo += $"[{i}:v]scale={_videoScale}:force_original_aspect_ratio=decrease,pad={_videoScale}:(ow-iw)/2:(oh-ih)/2,setsar=1,fade=t=in:st=0:d={fadeDuration},fade=t=out:st={timeFadeOut}:d={fadeDuration}[v{i}];";
                 filterIndex += $"[v{i}]";
             }
             if (!string.IsNullOrEmpty(_fileAudio))

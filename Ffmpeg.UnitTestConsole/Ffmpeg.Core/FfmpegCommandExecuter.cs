@@ -17,9 +17,9 @@ namespace Ffmpeg.Core
             //Console.WriteLine(ping.Output);
         }
 
-        public FfmpegCommandResult Run(FfmpegCommandOutput cmd)
+        public FfmpegConvertedResult Run(FfmpegCommandLine cmd)
         {
-            List<FfmpegCommandResult> subResult = new List<FfmpegCommandResult>();
+            List<FfmpegConvertedResult> subResult = new List<FfmpegConvertedResult>();
 
             if (cmd.SubFileOutput != null && cmd.SubFileOutput.Count > 0)
             {
@@ -52,7 +52,7 @@ namespace Ffmpeg.Core
         //    return InternalRun(cmdLine, fileOutput);
         //}
 
-        private FfmpegCommandResult InternalRun(string cmdLine, string fileOutput)
+        private FfmpegConvertedResult InternalRun(string cmdLine, string fileOutput)
         {
             try
             {
@@ -75,7 +75,7 @@ namespace Ffmpeg.Core
             cmd.StartInfo.FileName = "cmd.exe";
             cmd.Start();
 
-            Console.WriteLine("FfmpegCommandRunner Started");
+            Console.WriteLine($"FfmpegCommandRunner Started: {fileOutput}");
 
             cmd.StandardInput.WriteLine(cmdLine);
             cmd.StandardInput.WriteLine("echo ##done##");
@@ -119,9 +119,9 @@ namespace Ffmpeg.Core
             bool isOk = outstring.IndexOf("Error", StringComparison.OrdinalIgnoreCase) <= 0;
             if (!isOk)
             {
-                Console.WriteLine("ERROR: " + fileOutput);
+                Console.WriteLine("WARNING: " + fileOutput);
             }
-            return new FfmpegCommandResult
+            return new FfmpegConvertedResult
             {
                 ConvertInMiliseconds = sw.ElapsedMilliseconds - 1000,
                 Output = outstring,

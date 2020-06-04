@@ -58,7 +58,7 @@ namespace Ffmpeg.UnitTestConsole
         {
             public string FileVideo { get; set; }
 
-            public FfmpegCommandResult ConvertResult { get; set; }
+            public FfmpegConvertedResult ConvertResult { get; set; }
         }
     }
 }
