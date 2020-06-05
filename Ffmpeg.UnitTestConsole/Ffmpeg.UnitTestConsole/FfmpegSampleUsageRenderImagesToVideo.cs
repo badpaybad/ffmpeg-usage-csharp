@@ -39,9 +39,9 @@ namespace Ffmpeg.UnitTestConsole
             var cmd = new FFmpegCommandBuilder().WithFileAudio(audioFile)
                 .AddFileInput(ListImageFile().Take(10).ToArray())
                 .WithFileOutput(fileOutput)
-                .WithVideoDurationInSeconds((decimal)3.5*60)
+                .WithVideoDurationInSeconds((decimal)8)
                 //.WithVideoDurationInSeconds(60)
-                .WithFadeDurationInSeconds(2)
+                .WithFadeDurationInSeconds(1)
                 .ToCommand();
 
             Console.WriteLine(fileOutput);
