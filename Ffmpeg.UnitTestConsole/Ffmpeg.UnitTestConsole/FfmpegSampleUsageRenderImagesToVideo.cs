@@ -37,12 +37,13 @@ namespace Ffmpeg.UnitTestConsole
             string fileOutput = Path.Combine(dir, $"video_{DateTime.Now.Ticks}.mp4");
 
             var cmd = new FFmpegCommandBuilder().WithFileAudio(audioFile)
-                .AddFileInput(ListImageFile().Take(10).ToArray())
+                .AddFileInput(ListImageFile().Take(8).ToArray())
                 .WithFileOutput(fileOutput)
-                .WithVideoDurationInSeconds((decimal)8)
+                .WithVideoDurationInSeconds(16)
                 //.WithVideoDurationInSeconds(60)
+                .WithTransition("fadewhite")
                 .WithFadeDurationInSeconds(1)
-                .ToCommand();
+                .ToCommandXfade();
 
             Console.WriteLine(fileOutput);
 

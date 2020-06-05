@@ -26,13 +26,19 @@ namespace Ffmpeg.Core
 
             List<FfmpegConvertedResult> subResult = new List<FfmpegConvertedResult>();
 
+            List<string> tempCmd = new List<string>();
+
             if (cmd.SubFileOutput != null && cmd.SubFileOutput.Count > 0)
             {
                 foreach (var subCmd in cmd.SubFileOutput)
                 {
                     subResult.Add(InternalRun(subCmd.FfmpegCommand, subCmd.FileOutput));
+                    tempCmd.Add(subCmd.FfmpegCommand);
                 }
             }
+            tempCmd.Add(cmd.FfmpegCommand);
+
+            var allcmd = string.Join("\r\n\r\n", tempCmd);
 
             var mainCmdResult = InternalRun(cmd.FfmpegCommand, cmd.FileOutput);
 

@@ -8,7 +8,21 @@ namespace Ffmpeg.Core
 {
     public class FFmpegCommandBuilder
     {
-        List<string> _xfade = new List<string> {
+        List<string> _xfadeVideo = new List<string>
+        {
+            "fade",
+"wipeleft",
+"wiperight",
+"wipeup",
+"wipedown",
+"slideleft",
+"slideright",
+"slideup",
+"slidedown"
+        };
+
+
+        List<string> _xfadeImage = new List<string> {
       //  "fade",
 "wipeleft",
 "wiperight",
@@ -43,8 +57,7 @@ namespace Ffmpeg.Core
 "hlslice",
 "hrslice",
 "vuslice",
-"vdslice"
-        };
+"vdslice"};
 
         List<string> _fileInput = new List<string>();
 
@@ -59,6 +72,8 @@ namespace Ffmpeg.Core
 
         int _audioLength;
 
+        string _transition;
+
         Random _rnd = new Random();
 
         public FFmpegCommandBuilder AddFileInput(params string[] files)
@@ -68,6 +83,16 @@ namespace Ffmpeg.Core
                 _fileInput.Add(file);
             }
 
+            return this;
+        }
+        /// <summary>
+        /// "fade", "wipeleft", "wiperight", "wipeup", "wipedown", "slideleft", "slideright", "slideup", "slidedown", "circlecrop", "rectcrop", "distance", "fadeblack", "fadewhite", "radial", "smoothleft", "smoothright", "smoothup", "smoothdown", "circleopen", "circleclose", "vertopen", "vertclose", "horzopen", "horzclose", "dissolve", "pixelize", "diagtl", "diagtr", "diagbl", "diagbr", "hlslice", "hrslice", "vuslice", "vdslice"
+        /// </summary>
+        /// <param name="transition"></param>
+        /// <returns></returns>
+        public FFmpegCommandBuilder WithTransition(string transition)
+        {
+            _transition = transition;
             return this;
         }
         public FFmpegCommandBuilder WithFileAudio(string file)
@@ -111,6 +136,11 @@ namespace Ffmpeg.Core
             if (_fadeDuration < 0) throw new Exception("Video duration do not valid. please call function WithFadeDurationInSeconds");
             if (string.IsNullOrEmpty(_fileOutput)) throw new Exception("File video outputdo not valid. please call function WithFileOutput");
 
+            if (_fileInput.Count % 2 != 0 || _fileInput.Count == 1)
+            {
+                _fileInput.Add(_fileInput[0]);
+            }
+
             var timeForEachImage = _videoDuration / _fileInput.Count;
 
             var fadeDuration = _fadeDuration;
@@ -118,15 +148,10 @@ namespace Ffmpeg.Core
             {
                 fadeDuration = timeForEachImage;
             }
-            if (_fileInput.Count % 2 != 0 || _fileInput.Count == 1)
-            {
-                _fileInput.Add(_fileInput[0]);
-            }
-
 
             List<FfmpegCommandLine> listSubCommand = new List<FfmpegCommandLine>();
 
-            var counter = 1;
+            var counter = 0;
 
             List<string> listFileInput = _fileInput.ToList();
 
@@ -137,14 +162,20 @@ namespace Ffmpeg.Core
             {
                 List<string> listFileInputNext = new List<string>();
 
-                var isImage = counter == 1;
+                var isImage = counter == 0;
+
                 var nextTimeForEacheImage = timeForEachImage * (decimal)Math.Pow(2, counter);
 
                 SplitToRun(listFileInput, (itms, idx) =>
                 {
+                    if (itms.Count == 1)
+                    {
+                        itms.Add(itms[0]);
+                    }
+
                     var twoImgTo1Video = Path.Combine(_dirOutput, counter + "_" + idx + "_" + _fileOutputName);
 
-                    var subCmd = BuildFfmpegCommandImageTransitionXFade(itms, twoImgTo1Video, nextTimeForEacheImage, fadeDuration, _xfade[_rnd.Next(0, _xfade.Count - 1)], isImage);
+                    var subCmd = BuildFfmpegCommandTransitionXFade(itms[0], itms[1], twoImgTo1Video, nextTimeForEacheImage, fadeDuration, _xfadeImage[_rnd.Next(0, _xfadeImage.Count - 1)], isImage);
 
                     listSubCommand.Add(new FfmpegCommandLine
                     {
@@ -154,7 +185,6 @@ namespace Ffmpeg.Core
 
                     listFileInputNext.Add(twoImgTo1Video);
                 }, 2);
-
 
                 if (listFileInputNext.Count == 1)
                 {
@@ -180,7 +210,77 @@ namespace Ffmpeg.Core
             return cmdMain;
         }
 
+        /// <summary>
+        /// only suport 2 file input
+        /// </summary>
+        /// <param name="fileInput"></param>
+        /// <param name="fileOutput"></param>
+        /// <param name="timeOfEachInput"></param>
+        /// <param name="fadeDuration"></param>
+        /// <param name="fadeMethod"></param>
+        /// <returns></returns>
+        string BuildFfmpegCommandTransitionXFade(string fileInput0, string fileInput1, string fileOutput, decimal timeOfEachInput, decimal fadeDuration
+           , string fadeMethod, bool isImage)
+        {
+            //https://trac.ffmpeg.org/wiki/Xfade
 
+            timeOfEachInput = Math.Round(timeOfEachInput, 2);
+            fadeDuration = Math.Round(fadeDuration, 2);
+
+            if (!string.IsNullOrEmpty(_transition))
+            {
+                fadeMethod = _transition;
+            }
+
+            string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
+
+            string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
+
+            string cmd = $"\"{ffmpegCmd}\" -y ";
+            string filterFadeIndex = "";
+            string filterScaleImage = "";
+            var offset = timeOfEachInput - fadeDuration;
+
+            if (isImage)
+            {
+                offset = timeOfEachInput;
+                cmd += $" -loop 1 -t {timeOfEachInput + fadeDuration} -i \"{fileInput0}\"";
+                cmd += $" -loop 1 -t {timeOfEachInput} -i \"{fileInput1}\"";
+            }
+            else
+            {
+                offset = timeOfEachInput - fadeDuration;
+                cmd += $" -i \"{fileInput0}\"";
+                cmd += $" -i \"{fileInput1}\"";
+
+                if ( !string.IsNullOrEmpty(_fileAudio))
+                {
+                    cmd += $" -t {timeOfEachInput*2} -i \"{_fileAudio}\"";
+                }
+            }
+
+            filterScaleImage += $"[0:v]scale={_videoScale}:force_original_aspect_ratio=decrease,pad={_videoScale}:(ow-iw)/2:(oh-ih)/2,setsar=1[v0];";
+            filterScaleImage += $"[1:v]scale={_videoScale}:force_original_aspect_ratio=decrease,pad={_videoScale}:(ow-iw)/2:(oh-ih)/2,setsar=1[v1];";
+
+            filterFadeIndex += $"[v0][v1]";
+
+            cmd += $" -filter_complex \"{filterScaleImage}{filterFadeIndex}xfade=transition={fadeMethod}:duration={fadeDuration}:offset={offset},format=yuv420p[v]\"";
+            if (isImage)
+            {
+                cmd += $" -map \"[v]\" \"{fileOutput}\"";
+            }
+            else
+            {
+                cmd += $" -map \"[v]\" -map 2:a  \"{fileOutput}\"";
+            }            
+
+            while (cmd.IndexOf("\\") >= 0)
+            {
+                cmd = cmd.Replace("\\", "/");
+            }
+
+            return cmd;
+        }
 
         public FfmpegCommandLine ToCommand()
         {
@@ -188,6 +288,13 @@ namespace Ffmpeg.Core
             if (_videoDuration < 1) throw new Exception("Video duration do not valid. please call function WithVideoDurationInSeconds");
             if (_fadeDuration < 0) throw new Exception("Video duration do not valid. please call function WithFadeDurationInSeconds");
             if (string.IsNullOrEmpty(_fileOutput)) throw new Exception("File video outputdo not valid. please call function WithFileOutput");
+
+            List<FfmpegCommandLine> listOf2ImageTo1Video = new List<FfmpegCommandLine>();
+
+            if (_fileInput.Count % 2 != 0 || _fileInput.Count == 1)
+            {
+                _fileInput.Add(_fileInput[0]);
+            }
 
             var timeForEachImage = _videoDuration / _fileInput.Count;
 
@@ -197,18 +304,13 @@ namespace Ffmpeg.Core
                 fadeDuration = timeForEachImage;
             }
 
-            List<FfmpegCommandLine> listOf2ImageTo1Video = new List<FfmpegCommandLine>();
-
-            if (_fileInput.Count % 2 != 0 || _fileInput.Count == 1)
-            {
-                _fileInput.Add(_fileInput[0]);
-            }
-
             SplitToRun(_fileInput, (itms, idx) =>
             {
+                if (itms.Count == 1) { itms.Add(itms[0]); }
+
                 var twoImgTo1Video = Path.Combine(_dirOutput, idx + "_" + _fileOutputName);
 
-                var subCmd = BuildFfmpegCommandImageTransitionXFade(itms, twoImgTo1Video, timeForEachImage, fadeDuration, _xfade[_rnd.Next(0, _xfade.Count - 1)], true);
+                var subCmd = BuildFfmpegCommandTransitionXFade(itms[0], itms[1], twoImgTo1Video, timeForEachImage, fadeDuration, _xfadeImage[_rnd.Next(0, _xfadeImage.Count - 1)], true);
 
                 listOf2ImageTo1Video.Add(new FfmpegCommandLine
                 {
@@ -256,61 +358,6 @@ namespace Ffmpeg.Core
 
         }
 
-        /// <summary>
-        /// only suport 2 file input
-        /// </summary>
-        /// <param name="fileInput"></param>
-        /// <param name="fileOutput"></param>
-        /// <param name="timeForEachImage"></param>
-        /// <param name="fadeDuration"></param>
-        /// <param name="fadeMethod"></param>
-        /// <returns></returns>
-        string BuildFfmpegCommandImageTransitionXFade(List<string> fileInput, string fileOutput, decimal timeForEachImage, decimal fadeDuration
-           , string fadeMethod, bool isImage)
-        {
-            //https://trac.ffmpeg.org/wiki/Xfade
-
-            timeForEachImage = Math.Round(timeForEachImage, 1);
-            fadeDuration = Math.Round(fadeDuration, 1);
-
-            string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
-
-            string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
-
-            string cmd = $"\"{ffmpegCmd}\"";
-            string filterFadeIndex = "";
-            string filterScaleImage = "";
-            var offset = timeForEachImage - fadeDuration;
-            if (offset < 0) offset = 0;
-
-            for (int i = 0; i < fileInput.Count; i++)
-            {
-                string f = fileInput[i];
-                if (isImage)
-                {
-                    cmd += $" -loop 1 -t {timeForEachImage} -i \"{f}\"";
-                }
-                else
-                {
-                    cmd += $" -i \"{f}\"";
-                }
-
-                filterScaleImage += $"[{i}:v]scale={_videoScale}:force_original_aspect_ratio=decrease,pad={_videoScale}:(ow-iw)/2:(oh-ih)/2,setsar=1[v{i}];";
-
-                filterFadeIndex += $"[v{i}]";
-            }
-
-            cmd += $" -filter_complex \"{filterScaleImage}{filterFadeIndex}xfade=transition={fadeMethod}:duration={fadeDuration}:offset={offset},format=yuv420p[v]\"";
-            cmd += $" -map \"[v]\" \"{fileOutput}\"";
-
-            while (cmd.IndexOf("\\") >= 0)
-            {
-                cmd = cmd.Replace("\\", "/");
-            }
-
-            return cmd;
-        }
-
         public string BuildFfmpegConcatVideo(List<string> filesInput, string fileOutput, decimal timeForEachInput, decimal fadeDuration
             , bool allowAddAudio)
         {
@@ -324,7 +371,7 @@ namespace Ffmpeg.Core
             string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
 
 
-            string cmd = $"\"{ffmpegCmd}\"";
+            string cmd = $"\"{ffmpegCmd}\" -y";
 
             var filterFadeVideo = "";
             var filterIndex = "";
