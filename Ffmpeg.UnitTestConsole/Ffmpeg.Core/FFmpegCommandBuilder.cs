@@ -165,6 +165,11 @@ namespace Ffmpeg.Core
                 var isImage = counter == 0;
 
                 var nextTimeForEacheImage = timeForEachImage * (decimal)Math.Pow(2, counter);
+                if (counter > 1)
+                {
+                    //xfade 2 video, se dung khoang giao video de noi' tiep. nen vd 7s + 7s , fadeDuration=2, 5+2+5
+                    nextTimeForEacheImage = nextTimeForEacheImage - fadeDuration;
+                }
 
                 SplitToRun(listFileInput, (itms, idx) =>
                 {
@@ -197,12 +202,20 @@ namespace Ffmpeg.Core
                 counter++;
             }
 
-            string mergerAudio = BuildFfmpegConcatVideo(new List<string> { latestFileCombined }
-            , _fileOutput, latestTimeForEacheImage, fadeDuration, true);
+            string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
+
+            string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
+
+            string cmd = $"\"{ffmpegCmd}\" -y -i {latestFileCombined} -i {_fileAudio} -c copy -shortest {_fileOutput}";
+
+            if (string.IsNullOrEmpty(_fileAudio))
+            {
+                cmd = $"\"{ffmpegCmd}\" -y -i {latestFileCombined} -c copy -shortest {_fileOutput}";
+            }
 
             var cmdMain = new FfmpegCommandLine
             {
-                FfmpegCommand = mergerAudio,
+                FfmpegCommand = cmd,
                 FileOutput = _fileOutput,
                 SubFileOutput = listSubCommand
             };
@@ -236,7 +249,7 @@ namespace Ffmpeg.Core
 
             string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
 
-            string cmd = $"\"{ffmpegCmd}\" -y ";
+            string cmd = $"\"{ffmpegCmd}\" -y";
             string filterFadeIndex = "";
             string filterScaleImage = "";
             var offset = timeOfEachInput - fadeDuration;
@@ -253,9 +266,9 @@ namespace Ffmpeg.Core
                 cmd += $" -i \"{fileInput0}\"";
                 cmd += $" -i \"{fileInput1}\"";
 
-                if ( !string.IsNullOrEmpty(_fileAudio))
+                if (!string.IsNullOrEmpty(_fileAudio))
                 {
-                    cmd += $" -t {timeOfEachInput*2} -i \"{_fileAudio}\"";
+                    //cmd += $" -t {timeOfEachInput*2} -i \"{_fileAudio}\"";
                 }
             }
 
@@ -271,8 +284,9 @@ namespace Ffmpeg.Core
             }
             else
             {
-                cmd += $" -map \"[v]\" -map 2:a  \"{fileOutput}\"";
-            }            
+                //cmd += $" -map \"[v]\" -map 2:a  \"{fileOutput}\"";
+                cmd += $" -map \"[v]\" \"{fileOutput}\"";
+            }
 
             while (cmd.IndexOf("\\") >= 0)
             {
