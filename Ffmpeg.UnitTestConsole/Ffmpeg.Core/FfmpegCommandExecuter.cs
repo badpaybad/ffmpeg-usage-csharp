@@ -47,6 +47,7 @@ namespace Ffmpeg.Core
                          {
                              result.Add(Task<FfmpegConvertedResult>.Run(() =>
                              {
+                                 tempCmd.Add(subCmd.FfmpegCommand);
                                  return InternalRun(subCmd.FfmpegCommand, subCmd.FileOutput);
                              }));
                          }

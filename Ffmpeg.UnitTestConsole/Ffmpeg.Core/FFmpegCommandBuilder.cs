@@ -61,6 +61,29 @@ namespace Ffmpeg.Core
 "vuslice",
 "vdslice"};
 
+        public class GifFileConfig
+        {
+            public string FileGif;
+            public int FromSeconds;
+            public int Duration;
+            public int Y;
+            public int X;
+            public int Width;
+            public int Height;
+
+            public string CalScale(string videoScale)
+            {
+                if (Width == 0 || Height == 0)
+                {
+                    return videoScale;
+                }
+
+                return "320:240";
+            }
+
+
+        }
+
         List<string> _fileInput = new List<string>();
 
         string _fileAudio;
@@ -77,6 +100,9 @@ namespace Ffmpeg.Core
         string _fadeMode;
 
         Random _rnd = new Random();
+
+        List<GifFileConfig> _fileGif = new List<GifFileConfig>();
+
 
         public FFmpegCommandBuilder AddFileInput(params string[] files)
         {
@@ -103,6 +129,23 @@ namespace Ffmpeg.Core
             _fileAudio = file;
             return this;
         }
+        public FFmpegCommandBuilder AddFileGif(string file, int fromSenconds, int duration=2, int positionX=0, int positionY=0, int width=0, int height=0)
+        {
+            var itm = new GifFileConfig
+            {
+                FileGif= file,
+                FromSeconds=fromSenconds,
+                Duration=duration,
+                Height=height,
+                Width=width,
+                X=positionX,
+                Y= positionY
+            };
+
+            _fileGif.Add(itm);
+            return this;
+        }
+
         public FFmpegCommandBuilder WithFileOutput(string file)
         {
             _fileOutput = file;
@@ -206,6 +249,35 @@ namespace Ffmpeg.Core
                 counter++;
             }
 
+            #region build gif additional
+
+            if (_fileGif != null && _fileGif.Count > 0)
+            {
+                var beginGifGroupOrder = listSubCommand.Count + 1;
+
+                for (int i = 0; i < _fileGif.Count; i++)
+                {
+                    var f = _fileGif[i];
+                    var outputFileWithGif = Path.Combine(_dirOutput, beginGifGroupOrder + "g" + i + "_" + _fileOutputName);
+
+                    var gifCmd = BuildGiftOverlayCommand(latestFileCombined, outputFileWithGif, f.FileGif, f.FromSeconds, f.Duration,f.CalScale(_videoScale),f.X,f.Y);
+
+                    listSubCommand.Add(new FfmpegCommandLine
+                    {
+                        GroupOrder = beginGifGroupOrder + i,
+                        FileOutput = outputFileWithGif,
+                        FfmpegCommand = gifCmd,
+                    });
+
+                    latestFileCombined = outputFileWithGif;
+                }
+
+            }
+
+            #endregion
+
+            #region build main command
+
             string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
 
             string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
@@ -216,6 +288,8 @@ namespace Ffmpeg.Core
             {
                 cmd = $"\"{ffmpegCmd}\" -y -i {latestFileCombined} -c copy -shortest {_fileOutput}";
             }
+
+            #endregion
 
             var cmdMain = new FfmpegCommandLine
             {
@@ -301,6 +375,7 @@ namespace Ffmpeg.Core
             return cmd;
         }
 
+        [Obsolete("Please use new function ToCommandXfade ")]
         public FfmpegCommandLine ToCommand()
         {
             if (_fileInput == null || _fileInput.Count == 0) throw new Exception("No input file. please call function AddFileInput");
@@ -377,7 +452,7 @@ namespace Ffmpeg.Core
 
         }
 
-        public string BuildFfmpegConcatVideo(List<string> filesInput, string fileOutput, decimal timeForEachInput, decimal fadeDuration
+        string BuildFfmpegConcatVideo(List<string> filesInput, string fileOutput, decimal timeForEachInput, decimal fadeDuration
             , bool allowAddAudio)
         {
 
@@ -421,24 +496,23 @@ namespace Ffmpeg.Core
         }
 
 
-        string BuildGiftOverlayCommand(string fileGift, int fromSeconds)
+        string BuildGiftOverlayCommand(string fileInput, string fileOutput, string fileGift, int fromSeconds, int duration, string scale, int x,int y )
         {
             string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
 
-            var frame = fromSeconds * 24;
-
-            var fileVideo = Path.Combine(_dirOutput, "g_" + _fileOutputName);
+            var frame = fromSeconds * 28;
 
             string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
 
-            string cmd = $"\"{ffmpegCmd}\" -y -i \"{fileVideo}\" -ignore_loop 0 -i \"{fileGift}\" -filter_complex \"[1:v]scale = {_videoScale}[ovrl];[0:v][ovrl]overlay = 0:0\" -frames:v {frame} -codec:a copy -codec:v libx264 -max_muxing_queue_size 2048 \"{_fileOutput}\"";
+            string cmd = $"\"{ffmpegCmd}\" -y -i \"{fileInput}\" -i \"{fileGift}\" -filter_complex \"[1:v]scale={scale}:force_original_aspect_ratio=decrease,pad={scale}:(ow-iw)/2:(oh-ih)/2,setsar=1[ovrl];[0:v][ovrl]overlay = {x}:{y}:enable='between(t, {fromSeconds}, {fromSeconds+ duration})'\" \"{fileOutput}\"";
+            //addOption(['-ignore_loop 0', '-i '+wmimage+ '','-filter_complex [0:v][1:v]overlay=10:10:shortest=1:enable="between(t,2,5)"'])
 
             return cmd;
         }
 
         public void SplitToRun<T>(List<T> allItems, Action<List<T>, int> doBatch, int batchSize = 2)
         {
-            allItems.SplitToRun(batchSize,doBatch);
+            allItems.SplitToRun(batchSize, doBatch);
         }
 
     }

@@ -17,6 +17,12 @@
     <None Update="ImageTest\audio\3.MP3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="ImageTest\gif\heart.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="ImageTest\gif\sunset.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ImageTest\imgs\1.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -44,6 +50,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="ImageTest\gif\" />
     <Folder Include="ImageTest\results\" />
   </ItemGroup>
 

@@ -24,6 +24,5 @@ namespace Ffmpeg.Core
 
             return true;
         }
-
     }
 }

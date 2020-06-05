@@ -36,11 +36,13 @@ namespace Ffmpeg.UnitTestConsole
 
             string fileOutput = Path.Combine(dir, $"video_{DateTime.Now.Ticks}.mp4");
 
-            var cmd = new FFmpegCommandBuilder().WithFileAudio(audioFile)
-                .AddFileInput(ListImageFile().Take(15).ToArray())
+            var cmd = new FFmpegCommandBuilder()
+                .WithFileAudio(audioFile)
+                .AddFileInput(ListImageFile().Take(2).ToArray())
                 .WithFileOutput(fileOutput)
-                .WithVideoDurationInSeconds(60)
+                .WithVideoDurationInSeconds(6)
                 //.WithFadeTransition("fadewhite")
+                .AddFileGif(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageTest/gif/heart.gif"), 2)
                 .WithFadeDurationInSeconds(1)
                 .ToCommandXfade();
 
