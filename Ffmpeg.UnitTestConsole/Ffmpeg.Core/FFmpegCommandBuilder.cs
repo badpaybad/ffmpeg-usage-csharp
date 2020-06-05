@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Ffmpeg.Core.Extensions;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Ffmpeg.Core
 {
@@ -72,7 +74,7 @@ namespace Ffmpeg.Core
 
         int _audioLength;
 
-        string _transition;
+        string _fadeMode;
 
         Random _rnd = new Random();
 
@@ -86,13 +88,14 @@ namespace Ffmpeg.Core
             return this;
         }
         /// <summary>
+        /// let empty for random
         /// "fade", "wipeleft", "wiperight", "wipeup", "wipedown", "slideleft", "slideright", "slideup", "slidedown", "circlecrop", "rectcrop", "distance", "fadeblack", "fadewhite", "radial", "smoothleft", "smoothright", "smoothup", "smoothdown", "circleopen", "circleclose", "vertopen", "vertclose", "horzopen", "horzclose", "dissolve", "pixelize", "diagtl", "diagtr", "diagbl", "diagbr", "hlslice", "hrslice", "vuslice", "vdslice"
         /// </summary>
-        /// <param name="transition"></param>
+        /// <param name="fadeMode"></param>
         /// <returns></returns>
-        public FFmpegCommandBuilder WithTransition(string transition)
+        public FFmpegCommandBuilder WithFadeTransition(string fadeMode)
         {
-            _transition = transition;
+            _fadeMode = fadeMode;
             return this;
         }
         public FFmpegCommandBuilder WithFileAudio(string file)
@@ -168,7 +171,7 @@ namespace Ffmpeg.Core
                 if (counter > 1)
                 {
                     //xfade 2 video, se dung khoang giao video de noi' tiep. nen vd 7s + 7s , fadeDuration=2, 5+2+5
-                    nextTimeForEacheImage = nextTimeForEacheImage - fadeDuration;
+                    nextTimeForEacheImage = nextTimeForEacheImage - fadeDuration * (counter - 1);
                 }
 
                 SplitToRun(listFileInput, (itms, idx) =>
@@ -185,8 +188,9 @@ namespace Ffmpeg.Core
                     listSubCommand.Add(new FfmpegCommandLine
                     {
                         FfmpegCommand = subCmd,
-                        FileOutput = twoImgTo1Video
-                    });
+                        FileOutput = twoImgTo1Video,
+                        GroupOrder = counter + 1
+                    }); ;
 
                     listFileInputNext.Add(twoImgTo1Video);
                 }, 2);
@@ -215,6 +219,7 @@ namespace Ffmpeg.Core
 
             var cmdMain = new FfmpegCommandLine
             {
+                GroupOrder = 0,
                 FfmpegCommand = cmd,
                 FileOutput = _fileOutput,
                 SubFileOutput = listSubCommand
@@ -240,9 +245,9 @@ namespace Ffmpeg.Core
             timeOfEachInput = Math.Round(timeOfEachInput, 2);
             fadeDuration = Math.Round(fadeDuration, 2);
 
-            if (!string.IsNullOrEmpty(_transition))
+            if (!string.IsNullOrEmpty(_fadeMode))
             {
-                fadeMethod = _transition;
+                fadeMethod = _fadeMode;
             }
 
             string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
@@ -433,25 +438,7 @@ namespace Ffmpeg.Core
 
         public void SplitToRun<T>(List<T> allItems, Action<List<T>, int> doBatch, int batchSize = 2)
         {
-            if (allItems == null || allItems.Count == 0) return;
-            var total = allItems.Count;
-            var skip = 0;
-            int batchCount = 0;
-            while (true)
-            {
-                var batch = allItems.Skip(skip).Take(batchSize).Distinct().ToList();
-
-                if (batch == null || batch.Count == 0) { return; }
-
-                doBatch(batch, batchCount);
-
-                batchCount++;
-
-                skip = skip + batchSize;
-
-                total = total - batchSize;
-            }
-
+            allItems.SplitToRun(batchSize,doBatch);
         }
 
     }

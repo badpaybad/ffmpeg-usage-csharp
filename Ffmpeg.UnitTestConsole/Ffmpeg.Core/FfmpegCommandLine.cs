@@ -4,6 +4,7 @@ namespace Ffmpeg.Core
 {
     public class FfmpegCommandLine
     {
+        public int GroupOrder { get; set; }
         public string FileOutput { get; set; }
 
         public string FfmpegCommand { get; set; }

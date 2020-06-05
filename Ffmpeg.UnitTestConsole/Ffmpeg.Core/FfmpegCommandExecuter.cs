@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Ffmpeg.Core.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,11 +32,34 @@ namespace Ffmpeg.Core
 
             if (cmd.SubFileOutput != null && cmd.SubFileOutput.Count > 0)
             {
-                foreach (var subCmd in cmd.SubFileOutput)
+                var groupByOrder = cmd.SubFileOutput.GroupBy(i => i.GroupOrder)
+                    .Select(i => new { GroupOrder = i.Key, Commands = i.DefaultIfEmpty() })
+                    .OrderBy(i => i.GroupOrder)
+                    .ToList();
+
+                foreach (var g in groupByOrder)
                 {
-                    subResult.Add(InternalRun(subCmd.FfmpegCommand, subCmd.FileOutput));
-                    tempCmd.Add(subCmd.FfmpegCommand);
+                    g.Commands.ToList().SplitToRun(3, (itms, idx) =>
+                     {
+                         List<Task<FfmpegConvertedResult>> result = new List<Task<FfmpegConvertedResult>>();
+
+                         foreach (var subCmd in itms)
+                         {
+                             result.Add(Task<FfmpegConvertedResult>.Run(() =>
+                             {
+                                 return InternalRun(subCmd.FfmpegCommand, subCmd.FileOutput);
+                             }));
+                         }
+
+                         subResult.AddRange(Task.WhenAll(result).GetAwaiter().GetResult());
+                     });
                 }
+
+                //foreach (var subCmd in cmd.SubFileOutput)
+                //{
+                //    subResult.Add(InternalRun(subCmd.FfmpegCommand, subCmd.FileOutput));
+                //    tempCmd.Add(subCmd.FfmpegCommand);
+                //}
             }
             tempCmd.Add(cmd.FfmpegCommand);
 
@@ -154,8 +179,6 @@ namespace Ffmpeg.Core
                 line += outputChr;
                 if (outputChr.IndexOf("\n") >= 0)
                 {
-                    //Console.Write(line);
-
                     output += line;
                     line = "";
                 }
