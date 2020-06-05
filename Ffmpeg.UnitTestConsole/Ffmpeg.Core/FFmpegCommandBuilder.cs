@@ -10,7 +10,7 @@ namespace Ffmpeg.Core
 {
     public class FFmpegCommandBuilder
     {
-        List<string> _xfadeVideo = new List<string>
+        static List<string> _xfadeVideoConst = new List<string>
         {
             "fade",
 "wipeleft",
@@ -24,7 +24,7 @@ namespace Ffmpeg.Core
         };
 
 
-        List<string> _xfadeImage = new List<string> {
+        static List<string> _xfadeImageConst = new List<string> {
       //  "fade",
 "wipeleft",
 "wiperight",
@@ -61,6 +61,11 @@ namespace Ffmpeg.Core
 "vuslice",
 "vdslice"};
 
+        static List<string> _gifScaleConst = new List<string>
+        {
+            "1080:720","320:240","160:120","720:680"
+        };
+
         public class GifFileConfig
         {
             public string FileGif;
@@ -70,17 +75,7 @@ namespace Ffmpeg.Core
             public int X;
             public int Width;
             public int Height;
-
-            public string CalScale(string videoScale)
-            {
-                if (Width == 0 || Height == 0)
-                {
-                    return videoScale;
-                }
-
-                return "320:240";
-            }
-
+            public string Scale;
 
         }
 
@@ -99,10 +94,9 @@ namespace Ffmpeg.Core
 
         string _fadeMode;
 
-        Random _rnd = new Random();
+        static Random _rnd = new Random();
 
         List<GifFileConfig> _fileGif = new List<GifFileConfig>();
-
 
         public FFmpegCommandBuilder AddFileInput(params string[] files)
         {
@@ -129,17 +123,17 @@ namespace Ffmpeg.Core
             _fileAudio = file;
             return this;
         }
-        public FFmpegCommandBuilder AddFileGif(string file, int fromSenconds, int duration=2, int positionX=0, int positionY=0, int width=0, int height=0)
+        public FFmpegCommandBuilder AddFileGif(string file, int fromSenconds, int duration = 2, int positionX = 0, int positionY = 0, int width = 0, int height = 0)
         {
             var itm = new GifFileConfig
             {
-                FileGif= file,
-                FromSeconds=fromSenconds,
-                Duration=duration,
-                Height=height,
-                Width=width,
-                X=positionX,
-                Y= positionY
+                FileGif = file,
+                FromSeconds = fromSenconds,
+                Duration = duration,
+                Height = height,
+                Width = width,
+                X = positionX,
+                Y = positionY
             };
 
             _fileGif.Add(itm);
@@ -226,7 +220,7 @@ namespace Ffmpeg.Core
 
                     var twoImgTo1Video = Path.Combine(_dirOutput, counter + "_" + idx + "_" + _fileOutputName);
 
-                    var subCmd = BuildFfmpegCommandTransitionXFade(itms[0], itms[1], twoImgTo1Video, nextTimeForEacheImage, fadeDuration, _xfadeImage[_rnd.Next(0, _xfadeImage.Count - 1)], isImage);
+                    var subCmd = BuildFfmpegCommandTransitionXFade(itms[0], itms[1], twoImgTo1Video, nextTimeForEacheImage, fadeDuration, _xfadeImageConst[_rnd.Next(0, _xfadeImageConst.Count - 1)], isImage);
 
                     listSubCommand.Add(new FfmpegCommandLine
                     {
@@ -257,10 +251,11 @@ namespace Ffmpeg.Core
 
                 for (int i = 0; i < _fileGif.Count; i++)
                 {
-                    var f = _fileGif[i];
+                    var f = GifFileConfigCal(_fileGif[i]);
+
                     var outputFileWithGif = Path.Combine(_dirOutput, beginGifGroupOrder + "g" + i + "_" + _fileOutputName);
 
-                    var gifCmd = BuildGiftOverlayCommand(latestFileCombined, outputFileWithGif, f.FileGif, f.FromSeconds, f.Duration,f.CalScale(_videoScale),f.X,f.Y);
+                    var gifCmd = BuildGiftOverlayCommand(latestFileCombined, outputFileWithGif, f.FileGif, f.FromSeconds, f.Duration, f.Scale, f.X, f.Y);
 
                     listSubCommand.Add(new FfmpegCommandLine
                     {
@@ -375,6 +370,61 @@ namespace Ffmpeg.Core
             return cmd;
         }
 
+        public GifFileConfig GifFileConfigCal(GifFileConfig f)
+        {
+            var arr = _videoScale.Split(':');
+
+            var w = int.Parse(arr[0]);
+            var h = int.Parse(arr[1]);
+            var temp = new GifFileConfig();
+            temp.FileGif = f.FileGif;
+            temp.FromSeconds = f.FromSeconds;
+            temp.Duration = f.Duration;
+
+            if (f.X == 0 || f.Y == 0)
+            {
+                temp.X = _rnd.Next(0, w / 2);
+                temp.Y = _rnd.Next(0, h / 2);
+            }
+            else
+            {
+                temp.Y = f.Y;
+                temp.X = f.X;
+            }
+
+            temp.Width = f.Width;
+            temp.Height = f.Width;
+
+            if (f.Width == 0 && f.Height == 0)
+            {
+                temp.Scale = _gifScaleConst[_rnd.Next(0, _gifScaleConst.Count - 1)];
+            }
+            else
+            {
+                temp.Scale = "320:240";
+
+                if (f.Width == 0 && f.Height != 0)
+                {
+                    temp.Width = temp.Height * w / h;
+                }
+                if (f.Width != 0 && f.Height == 0)
+                {
+                    temp.Height = temp.Width * h / w;
+                }
+
+                temp.Scale = $"{temp.Width}:{temp.Height}";
+            }
+
+            if (temp.Scale == _videoScale)
+            {
+                temp.X = 0;
+                temp.Y = 0;
+            }
+
+            return temp;
+        }
+
+
         [Obsolete("Please use new function ToCommandXfade ")]
         public FfmpegCommandLine ToCommand()
         {
@@ -404,7 +454,7 @@ namespace Ffmpeg.Core
 
                 var twoImgTo1Video = Path.Combine(_dirOutput, idx + "_" + _fileOutputName);
 
-                var subCmd = BuildFfmpegCommandTransitionXFade(itms[0], itms[1], twoImgTo1Video, timeForEachImage, fadeDuration, _xfadeImage[_rnd.Next(0, _xfadeImage.Count - 1)], true);
+                var subCmd = BuildFfmpegCommandTransitionXFade(itms[0], itms[1], twoImgTo1Video, timeForEachImage, fadeDuration, _xfadeImageConst[_rnd.Next(0, _xfadeImageConst.Count - 1)], true);
 
                 listOf2ImageTo1Video.Add(new FfmpegCommandLine
                 {
@@ -496,15 +546,13 @@ namespace Ffmpeg.Core
         }
 
 
-        string BuildGiftOverlayCommand(string fileInput, string fileOutput, string fileGift, int fromSeconds, int duration, string scale, int x,int y )
+        string BuildGiftOverlayCommand(string fileInput, string fileOutput, string fileGift, int fromSeconds, int duration, string scale, int x, int y)
         {
             string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
 
-            var frame = fromSeconds * 28;
-
             string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
 
-            string cmd = $"\"{ffmpegCmd}\" -y -i \"{fileInput}\" -i \"{fileGift}\" -filter_complex \"[1:v]scale={scale}:force_original_aspect_ratio=decrease,pad={scale}:(ow-iw)/2:(oh-ih)/2,setsar=1[ovrl];[0:v][ovrl]overlay = {x}:{y}:enable='between(t, {fromSeconds}, {fromSeconds+ duration})'\" \"{fileOutput}\"";
+            string cmd = $"\"{ffmpegCmd}\" -y -i \"{fileInput}\" -i \"{fileGift}\" -filter_complex \"[1:v]scale={scale},setsar=1[ovrl];[0:v][ovrl]overlay = {x}:{y}:enable='between(t, {fromSeconds}, {fromSeconds + duration})'\" \"{fileOutput}\"";
             //addOption(['-ignore_loop 0', '-i '+wmimage+ '','-filter_complex [0:v][1:v]overlay=10:10:shortest=1:enable="between(t,2,5)"'])
 
             return cmd;
