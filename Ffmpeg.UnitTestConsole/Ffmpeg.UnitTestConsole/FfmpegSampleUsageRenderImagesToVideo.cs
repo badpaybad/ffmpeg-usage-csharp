@@ -38,11 +38,12 @@ namespace Ffmpeg.UnitTestConsole
 
             var cmd = new FFmpegCommandBuilder()
                 .WithFileAudio(audioFile)
-                .AddFileInput(ListImageFile().Take(2).ToArray())
+                .AddFileInput(ListImageFile().Take(15).ToArray())
                 .WithFileOutput(fileOutput)
-                .WithVideoDurationInSeconds(6)
+                .WithVideoDurationInSeconds(60)
                 //.WithFadeTransition("fadewhite")
                 .AddFileGif(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageTest/gif/heart.gif"), 2)
+                .AddFileGif(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageTest/gif/sunset.gif"), 10)
                 .WithFadeDurationInSeconds(1)
                 .ToCommandXfade();
 
