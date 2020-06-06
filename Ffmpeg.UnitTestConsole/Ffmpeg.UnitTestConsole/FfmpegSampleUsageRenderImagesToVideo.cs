@@ -42,8 +42,8 @@ namespace Ffmpeg.UnitTestConsole
                 .WithFileOutput(fileOutput)
                 .WithVideoDurationInSeconds(20)
                 //.WithFadeTransition("fadewhite")
-                .AddFileGif(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageTest/gif/heart.gif"), 2)
-                .AddFileGif(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageTest/gif/sunset.gif"), 10)
+                .AddFileGif(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageTest/gif/heart.gif"), _rnd.Next(1,10))
+                .AddFileGif(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageTest/gif/sunset.gif"), _rnd.Next(10, 19))
                 .WithFadeDurationInSeconds(1)
                 .ToCommandXfade();
 

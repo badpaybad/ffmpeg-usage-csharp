@@ -193,7 +193,7 @@ namespace Ffmpeg.Core
 
             SplitToRun(_fileInput, (itms, idx) =>
             {
-                var twoImgTo1Video = Path.Combine(_dirOutput, groupOrder + "img" + idx + "_" + _fileOutputName);
+                var twoImgTo1Video = Path.Combine(_dirOutput, "img" + groupOrder + "_" + idx + "_" + _fileOutputName);
 
                 var subCmd = BuildFfmpegCommandTransitionXFade(itms[0], itms[1], twoImgTo1Video, timeForEachImage, fadeDuration
                     , _xfadeImageConst[_rnd.Next(0, _xfadeImageConst.Count - 1)], true);
@@ -214,7 +214,7 @@ namespace Ffmpeg.Core
             //line by line merger video into one
             groupOrder = groupOrder + 1;
 
-            string latestFileOutputCombined = Path.Combine(_dirOutput, groupOrder + "v" + 0 + "_" + _fileOutputName);
+            string latestFileOutputCombined = Path.Combine(_dirOutput, "v" + groupOrder + "_" + +0 + "_" + _fileOutputName);
 
             var subCmd = BuildFfmpegCommandTransitionXFade(list2ImageTo1Video[0].FileOutput, list2ImageTo1Video[1].FileOutput
                 , latestFileOutputCombined, timeForEachImage * 2, fadeDuration
@@ -232,8 +232,9 @@ namespace Ffmpeg.Core
             for (var i = 2; i < list2ImageTo1Video.Count; i++)
             {
                 var idx = i - 1;
+                groupOrder = groupOrder + 1;
 
-                var fileOutput = Path.Combine(_dirOutput, groupOrder + "v" + idx + "_" + _fileOutputName);
+                var fileOutput = Path.Combine(_dirOutput, "v" + groupOrder + "_" + idx + "_" + _fileOutputName);
 
                 subCmd = BuildFfmpegCommandTransitionXFade(latestFileOutputCombined, list2ImageTo1Video[i].FileOutput
                     , fileOutput, latestTimeVideoDuration, fadeDuration
@@ -243,7 +244,7 @@ namespace Ffmpeg.Core
                 {
                     FfmpegCommand = subCmd,
                     FileOutput = fileOutput,
-                    GroupOrder = groupOrder + idx
+                    GroupOrder = groupOrder
                 });
 
                 latestFileOutputCombined = fileOutput;
@@ -254,19 +255,20 @@ namespace Ffmpeg.Core
 
             if (_fileGif != null && _fileGif.Count > 0)
             {
-                groupOrder = groupOrder + 1;
 
                 for (int i = 0; i < _fileGif.Count; i++)
                 {
                     var f = GifFileConfigCal(_fileGif[i]);
 
-                    var outputFileWithGif = Path.Combine(_dirOutput, groupOrder + "g" + i + "_" + _fileOutputName);
+                    groupOrder = groupOrder + 1;
+
+                    var outputFileWithGif = Path.Combine(_dirOutput, "g" + groupOrder + "_" + i + "_" + _fileOutputName);
 
                     var gifCmd = BuildGiftOverlayCommand(latestFileOutputCombined, outputFileWithGif, f.FileGif, f.FromSeconds, f.Duration, f.Scale, f.X, f.Y);
 
                     listAllSubOrderedCmd.Add(new FfmpegCommandLine
                     {
-                        GroupOrder = groupOrder + i,
+                        GroupOrder = groupOrder,
                         FileOutput = outputFileWithGif,
                         FfmpegCommand = gifCmd,
                     });
