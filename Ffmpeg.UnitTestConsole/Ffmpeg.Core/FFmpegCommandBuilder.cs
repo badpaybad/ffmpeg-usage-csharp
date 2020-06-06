@@ -187,7 +187,7 @@ namespace Ffmpeg.Core
                 fadeDuration = timeForEachImage;
             }
 
-            List<FfmpegCommandLine> list2ImageTo1Video = new List<FfmpegCommandLine>();
+            List<FfmpegCommandLine> listVideoFrom2Img = new List<FfmpegCommandLine>();
 
             var groupOrder = 0;
 
@@ -198,7 +198,7 @@ namespace Ffmpeg.Core
                 var subCmd = BuildFfmpegCommandTransitionXFade(itms[0], itms[1], twoImgTo1Video, timeForEachImage, fadeDuration
                     , _xfadeImageConst[_rnd.Next(0, _xfadeImageConst.Count - 1)], true);
 
-                list2ImageTo1Video.Add(new FfmpegCommandLine
+                listVideoFrom2Img.Add(new FfmpegCommandLine
                 {
                     FfmpegCommand = subCmd,
                     FileOutput = twoImgTo1Video,
@@ -209,14 +209,14 @@ namespace Ffmpeg.Core
 
             List<FfmpegCommandLine> listAllSubOrderedCmd = new List<FfmpegCommandLine>();
 
-            listAllSubOrderedCmd.AddRange(list2ImageTo1Video);
+            listAllSubOrderedCmd.AddRange(listVideoFrom2Img);
 
             //line by line merger video into one
             groupOrder = groupOrder + 1;
 
             string latestFileOutputCombined = Path.Combine(_dirOutput, "v" + groupOrder + "_" + +0 + "_" + _fileOutputName);
 
-            var subCmd = BuildFfmpegCommandTransitionXFade(list2ImageTo1Video[0].FileOutput, list2ImageTo1Video[1].FileOutput
+            var subCmd = BuildFfmpegCommandTransitionXFade(listVideoFrom2Img[0].FileOutput, listVideoFrom2Img[1].FileOutput
                 , latestFileOutputCombined, timeForEachImage * 2, fadeDuration
                    , _xfadeImageConst[_rnd.Next(0, _xfadeImageConst.Count - 1)], false);
 
@@ -227,16 +227,16 @@ namespace Ffmpeg.Core
                 GroupOrder = groupOrder
             });
 
-            var latestTimeVideoDuration = (timeForEachImage * 2) + (timeForEachImage * 2);
+            var latestTimeVideoDuration = (timeForEachImage * 2) + (timeForEachImage * 2) - fadeDuration;
 
-            for (var i = 2; i < list2ImageTo1Video.Count; i++)
+            for (var i = 2; i < listVideoFrom2Img.Count; i++)
             {
                 var idx = i - 1;
                 groupOrder = groupOrder + 1;
 
                 var fileOutput = Path.Combine(_dirOutput, "v" + groupOrder + "_" + idx + "_" + _fileOutputName);
 
-                subCmd = BuildFfmpegCommandTransitionXFade(latestFileOutputCombined, list2ImageTo1Video[i].FileOutput
+                subCmd = BuildFfmpegCommandTransitionXFade(latestFileOutputCombined, listVideoFrom2Img[i].FileOutput
                     , fileOutput, latestTimeVideoDuration, fadeDuration
                     , _xfadeImageConst[_rnd.Next(0, _xfadeImageConst.Count - 1)], false);
 
@@ -248,7 +248,7 @@ namespace Ffmpeg.Core
                 });
 
                 latestFileOutputCombined = fileOutput;
-                latestTimeVideoDuration = latestTimeVideoDuration + (timeForEachImage * 2);
+                latestTimeVideoDuration = latestTimeVideoDuration + (timeForEachImage * 2) - fadeDuration;
             }
 
             #region build gif additional
