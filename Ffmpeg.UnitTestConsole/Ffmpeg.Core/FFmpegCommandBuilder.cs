@@ -185,18 +185,19 @@ namespace Ffmpeg.Core
                 _fileInput.Add(_fileInput[0]);
             }
 
-            var timeForEachImage = _videoDuration / _fileInput.Count;
+            var timeForEachImage = (_videoDuration / _fileInput.Count);
 
             var fadeDuration = _fadeDuration;
             if (fadeDuration > timeForEachImage)
             {
                 fadeDuration = timeForEachImage;
             }
+            timeForEachImage = timeForEachImage + (fadeDuration/2);
 
             List<FfmpegCommandLine> listVideoFrom2Img = new List<FfmpegCommandLine>();
 
             var groupOrder = 0;
-
+            #region 2 images to 1 video
             SplitToRun(_fileInput, (itms, idx) =>
             {
                 var twoImgTo1Video = Path.Combine(_dirOutput, groupOrder + "img" + "_" + idx + "_" + _fileOutputName);
@@ -212,11 +213,14 @@ namespace Ffmpeg.Core
                 });
 
             }, 2);
+            #endregion
 
             List<FfmpegCommandLine> listAllSubOrderedCmd = new List<FfmpegCommandLine>();
 
             listAllSubOrderedCmd.AddRange(listVideoFrom2Img);
 
+
+            #region combine video one by one
             //line by line merger video into one
             groupOrder = groupOrder + 1;
 
@@ -234,7 +238,7 @@ namespace Ffmpeg.Core
                 GroupOrder = groupOrder
             });
 
-            latestTimeVideoDuration = latestTimeVideoDuration + (timeForEachImage * 2)- fadeDuration;
+            latestTimeVideoDuration = latestTimeVideoDuration + (timeForEachImage * 2) - fadeDuration;
 
             for (var i = 2; i < listVideoFrom2Img.Count; i++)
             {
@@ -255,8 +259,10 @@ namespace Ffmpeg.Core
                 });
 
                 latestFileOutputCombined = fileOutput;
-                latestTimeVideoDuration = latestTimeVideoDuration + (timeForEachImage * 2)- fadeDuration;
+                latestTimeVideoDuration = latestTimeVideoDuration + (timeForEachImage * 2) - fadeDuration;
             }
+
+            #endregion
 
             #region build gif additional
 
@@ -301,7 +307,7 @@ namespace Ffmpeg.Core
                 fileAudio = _fileAudio;
             }
 
-            string cmd = $"\"{ffmpegCmd}\" -y -i {latestFileOutputCombined} -t {_videoDuration} -i {fileAudio} -c copy {_fileOutput}";
+            string cmd = $"\"{ffmpegCmd}\" -y -i {latestFileOutputCombined} -t {_videoDuration} -i {fileAudio} -c copy -shortest {_fileOutput}";
 
             #endregion
 
@@ -348,8 +354,8 @@ namespace Ffmpeg.Core
             if (isImage)
             {
                 offset = durationInput0;
-                cmd += $" -loop 1 -t {durationInput0 + fadeDuration} -i \"{fileInput0}\"";
-                cmd += $" -loop 1 -t {durationInput1} -i \"{fileInput1}\"";
+                cmd += $" -loop 1 -t {durationInput0 + fadeDuration } -i \"{fileInput0}\"";
+                cmd += $" -loop 1 -t {durationInput1 } -i \"{fileInput1}\"";
             }
             else
             {
@@ -432,8 +438,6 @@ namespace Ffmpeg.Core
 
             return temp;
         }
-
-
 
         string BuildGiftOverlayCommand(string fileInput, string fileOutput, string fileGift, int fromSeconds, int duration, string scale, int x, int y)
         {
