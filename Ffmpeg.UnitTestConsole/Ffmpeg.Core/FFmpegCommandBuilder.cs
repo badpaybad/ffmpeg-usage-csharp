@@ -1,6 +1,7 @@
 ﻿using Ffmpeg.Core.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.SymbolStore;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -95,6 +96,11 @@ namespace Ffmpeg.Core
         static Random _rnd = new Random();
 
         List<GifFileConfig> _fileGif = new List<GifFileConfig>();
+
+        public FFmpegCommandBuilder()
+        {
+
+        }
 
         public FFmpegCommandBuilder AddFileInput(params string[] files)
         {
@@ -193,9 +199,9 @@ namespace Ffmpeg.Core
 
             SplitToRun(_fileInput, (itms, idx) =>
             {
-                var twoImgTo1Video = Path.Combine(_dirOutput, "img" + groupOrder + "_" + idx + "_" + _fileOutputName);
+                var twoImgTo1Video = Path.Combine(_dirOutput, groupOrder + "img" + "_" + idx + "_" + _fileOutputName);
 
-                var subCmd = BuildFfmpegCommandTransitionXFade(itms[0], itms[1], twoImgTo1Video, timeForEachImage, fadeDuration
+                var subCmd = BuildFfmpegCommandTransitionXFade(itms[0], itms[1], twoImgTo1Video, timeForEachImage, timeForEachImage, fadeDuration
                     , _xfadeImageConst[_rnd.Next(0, _xfadeImageConst.Count - 1)], true);
 
                 listVideoFrom2Img.Add(new FfmpegCommandLine
@@ -214,10 +220,11 @@ namespace Ffmpeg.Core
             //line by line merger video into one
             groupOrder = groupOrder + 1;
 
-            string latestFileOutputCombined = Path.Combine(_dirOutput, "v" + groupOrder + "_" + +0 + "_" + _fileOutputName);
+            string latestFileOutputCombined = Path.Combine(_dirOutput, groupOrder + "v" + +0 + "_" + _fileOutputName);
+            var latestTimeVideoDuration = timeForEachImage * 2;
 
             var subCmd = BuildFfmpegCommandTransitionXFade(listVideoFrom2Img[0].FileOutput, listVideoFrom2Img[1].FileOutput
-                , latestFileOutputCombined, timeForEachImage * 2, fadeDuration
+                , latestFileOutputCombined, latestTimeVideoDuration, timeForEachImage * 2, fadeDuration
                    , _xfadeImageConst[_rnd.Next(0, _xfadeImageConst.Count - 1)], false);
 
             listAllSubOrderedCmd.Add(new FfmpegCommandLine
@@ -227,17 +234,17 @@ namespace Ffmpeg.Core
                 GroupOrder = groupOrder
             });
 
-            var latestTimeVideoDuration = (timeForEachImage * 2) + (timeForEachImage * 2) - fadeDuration;
+            latestTimeVideoDuration = latestTimeVideoDuration + (timeForEachImage * 2)- fadeDuration;
 
             for (var i = 2; i < listVideoFrom2Img.Count; i++)
             {
                 var idx = i - 1;
                 groupOrder = groupOrder + 1;
 
-                var fileOutput = Path.Combine(_dirOutput, "v" + groupOrder + "_" + idx + "_" + _fileOutputName);
+                var fileOutput = Path.Combine(_dirOutput, groupOrder + "v" + idx + "_" + _fileOutputName);
 
                 subCmd = BuildFfmpegCommandTransitionXFade(latestFileOutputCombined, listVideoFrom2Img[i].FileOutput
-                    , fileOutput, latestTimeVideoDuration, fadeDuration
+                    , fileOutput, latestTimeVideoDuration, timeForEachImage * 2, fadeDuration
                     , _xfadeImageConst[_rnd.Next(0, _xfadeImageConst.Count - 1)], false);
 
                 listAllSubOrderedCmd.Add(new FfmpegCommandLine
@@ -248,7 +255,7 @@ namespace Ffmpeg.Core
                 });
 
                 latestFileOutputCombined = fileOutput;
-                latestTimeVideoDuration = latestTimeVideoDuration + (timeForEachImage * 2) - fadeDuration;
+                latestTimeVideoDuration = latestTimeVideoDuration + (timeForEachImage * 2)- fadeDuration;
             }
 
             #region build gif additional
@@ -262,7 +269,7 @@ namespace Ffmpeg.Core
 
                     groupOrder = groupOrder + 1;
 
-                    var outputFileWithGif = Path.Combine(_dirOutput, "g" + groupOrder + "_" + i + "_" + _fileOutputName);
+                    var outputFileWithGif = Path.Combine(_dirOutput, groupOrder + "g" + +i + "_" + _fileOutputName);
 
                     var gifCmd = BuildGiftOverlayCommand(latestFileOutputCombined, outputFileWithGif, f.FileGif, f.FromSeconds, f.Duration, f.Scale, f.X, f.Y);
 
@@ -286,12 +293,15 @@ namespace Ffmpeg.Core
 
             string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
 
-            string cmd = $"\"{ffmpegCmd}\" -y -i {latestFileOutputCombined} -i {_fileAudio} -c copy -shortest {_fileOutput}";
+            var fileAudioSilence = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin/silence.mp3");
+            var fileAudio = fileAudioSilence;
 
-            if (string.IsNullOrEmpty(_fileAudio))
+            if (!string.IsNullOrEmpty(_fileAudio))
             {
-                cmd = $"\"{ffmpegCmd}\" -y -i {latestFileOutputCombined} -c copy -shortest {_fileOutput}";
+                fileAudio = _fileAudio;
             }
+
+            string cmd = $"\"{ffmpegCmd}\" -y -i {latestFileOutputCombined} -t {_videoDuration} -i {fileAudio} -c copy {_fileOutput}";
 
             #endregion
 
@@ -315,13 +325,11 @@ namespace Ffmpeg.Core
         /// <param name="fadeDuration"></param>
         /// <param name="fadeMethod"></param>
         /// <returns></returns>
-        string BuildFfmpegCommandTransitionXFade(string fileInput0, string fileInput1, string fileOutput, decimal timeOfEachInput, decimal fadeDuration
+        string BuildFfmpegCommandTransitionXFade(string fileInput0, string fileInput1, string fileOutput, decimal durationInput0, decimal durationInput1, decimal fadeDuration
            , string fadeMethod, bool isImage)
         {
             //https://trac.ffmpeg.org/wiki/Xfade
-
-            timeOfEachInput = Math.Round(timeOfEachInput, 2);
-            fadeDuration = Math.Round(fadeDuration, 2);
+            var fileAudioSilence = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin/silence.mp3");
 
             if (!string.IsNullOrEmpty(_fadeMode))
             {
@@ -335,25 +343,23 @@ namespace Ffmpeg.Core
             string cmd = $"\"{ffmpegCmd}\" -y";
             string filterFadeIndex = "";
             string filterScaleImage = "";
-            var offset = timeOfEachInput - fadeDuration;
+            var offset = durationInput0 - fadeDuration;
 
             if (isImage)
             {
-                offset = timeOfEachInput;
-                cmd += $" -loop 1 -t {timeOfEachInput + fadeDuration} -i \"{fileInput0}\"";
-                cmd += $" -loop 1 -t {timeOfEachInput} -i \"{fileInput1}\"";
+                offset = durationInput0;
+                cmd += $" -loop 1 -t {durationInput0 + fadeDuration} -i \"{fileInput0}\"";
+                cmd += $" -loop 1 -t {durationInput1} -i \"{fileInput1}\"";
             }
             else
             {
-                offset = timeOfEachInput - fadeDuration;
+                offset = durationInput0 - fadeDuration;
                 cmd += $" -i \"{fileInput0}\"";
                 cmd += $" -i \"{fileInput1}\"";
-
-                if (!string.IsNullOrEmpty(_fileAudio))
-                {
-                    //cmd += $" -t {timeOfEachInput*2} -i \"{_fileAudio}\"";
-                }
             }
+
+            //trick for exactly video duration
+            //cmd += $" -t {durationInput0 + durationInput1} -i \"{fileAudioSilence}\"";
 
             filterScaleImage += $"[0:v]scale={_videoScale}:force_original_aspect_ratio=decrease,pad={_videoScale}:(ow-iw)/2:(oh-ih)/2,setsar=1[v0];";
             filterScaleImage += $"[1:v]scale={_videoScale}:force_original_aspect_ratio=decrease,pad={_videoScale}:(ow-iw)/2:(oh-ih)/2,setsar=1[v1];";
@@ -361,15 +367,9 @@ namespace Ffmpeg.Core
             filterFadeIndex += $"[v0][v1]";
 
             cmd += $" -filter_complex \"{filterScaleImage}{filterFadeIndex}xfade=transition={fadeMethod}:duration={fadeDuration}:offset={offset},format=yuv420p[v]\"";
-            if (isImage)
-            {
-                cmd += $" -map \"[v]\" \"{fileOutput}\"";
-            }
-            else
-            {
-                //cmd += $" -map \"[v]\" -map 2:a  \"{fileOutput}\"";
-                cmd += $" -map \"[v]\" \"{fileOutput}\"";
-            }
+
+            //cmd += $" -map \"[v]\" -map 2:a \"{fileOutput}\"";
+            cmd += $" -map \"[v]\" \"{fileOutput}\"";
 
             while (cmd.IndexOf("\\") >= 0)
             {
