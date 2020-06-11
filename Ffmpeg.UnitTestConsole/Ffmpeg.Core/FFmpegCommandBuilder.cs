@@ -14,7 +14,7 @@ namespace Ffmpeg.Core
         public int Order { get; set; }
         public string FullPathFile { get; set; }
 
-        public bool IsVideo { get; set; } 
+        public bool IsVideo { get; set; }
 
         public string FileName
         {
@@ -111,6 +111,8 @@ namespace Ffmpeg.Core
 
         string _fadeMode;
 
+        string _fps = "fps=fps=24";
+
         static Random _rnd = new Random();
 
         List<GifFileConfig> _fileGif = new List<GifFileConfig>();
@@ -198,11 +200,29 @@ namespace Ffmpeg.Core
             if (_fadeDuration < 0) throw new Exception("Video duration do not valid. please call function WithFadeDurationInSeconds");
             if (string.IsNullOrEmpty(_fileOutput)) throw new Exception("File video outputdo not valid. please call function WithFileOutput");
 
-            var fileGifts = _fileInput.Where(i => i.FullPathFile
-            .EndsWith(".gif", StringComparison.OrdinalIgnoreCase) == true).ToList();
+            _fileInput = _fileInput.Where(i => i.FullPathFile
+             .EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) == false).ToList();
 
+            var timeForEachImage = (_videoDuration / _fileInput.Count);
+
+            timeForEachImage = Math.Round(timeForEachImage, 2);
+
+            var fadeDuration = _fadeDuration;
+            if (fadeDuration > timeForEachImage)
+            {
+                fadeDuration = timeForEachImage;
+            }
+            timeForEachImage = timeForEachImage + fadeDuration ;
+                      
             List<FfmpegCommandLine> cmdsPrepare = new List<FfmpegCommandLine>();
-            List<FileInput> filesGifToVid = new List<FileInput>();
+
+            #region convert images to videos 1-1
+            var fileGifts = _fileInput.Where(i => i.FullPathFile
+            .EndsWith(".gif", StringComparison.OrdinalIgnoreCase) == true
+             && i.FullPathFile
+             .EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) == false
+            ).ToList();
+            
             foreach (var gf in fileGifts)
             {
                 var fileIn = gf.FullPathFile.Trim();
@@ -210,81 +230,53 @@ namespace Ffmpeg.Core
 
                 cmdsPrepare.Add(new FfmpegCommandLine
                 {
-                    GroupOrder = -1,
-                    FfmpegCommand = BuildGiftToVideo(fileIn, fileOut)
-                }); ;
-
-                filesGifToVid.Add(new FileInput { Order = gf.Order, FullPathFile = fileOut, IsVideo = true });
-
+                    GroupOrder = gf.Order,
+                    FfmpegCommand = BuildCmdForGiftToVideo(fileIn, fileOut, timeForEachImage),
+                    FileOutput= fileOut
+                }); 
             }
 
-            var fileInputs = _fileInput.Where(i => i.FullPathFile
-            .EndsWith(".gif", StringComparison.OrdinalIgnoreCase) == false
-            && i.FullPathFile
-            .EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) == false
+            List<FileInput> fileImgs = _fileInput.Where(i => i.FullPathFile
+             .EndsWith(".gif", StringComparison.OrdinalIgnoreCase) == false
+             && i.FullPathFile
+             .EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) == false
             ).ToList();
 
-            fileInputs.AddRange(filesGifToVid);
-
-            fileInputs = fileInputs.OrderBy(i => i.Order).ThenBy(i => i.FileName).ToList();
-
-            if (fileInputs.Count % 2 != 0 || fileInputs.Count == 1)
+            foreach (var imgf in fileImgs)
             {
-                fileInputs.Add(fileInputs[0]);
+                var fileIn = imgf.FullPathFile.Trim();
+                var fileOut = fileIn + ".mp4";
+
+                cmdsPrepare.Add(new FfmpegCommandLine
+                {
+                    GroupOrder = imgf.Order,
+                    FfmpegCommand = BuildCmdForImgToVideo(fileIn, fileOut, timeForEachImage),
+                    FileOutput= fileOut
+                }); 
             }
-
-            var timeForEachImage = (_videoDuration / fileInputs.Count);
-
-            var fadeDuration = _fadeDuration;
-            if (fadeDuration > timeForEachImage)
-            {
-                fadeDuration = timeForEachImage;
-            }
-            timeForEachImage = timeForEachImage + (fadeDuration / 2);
-
-            List<FfmpegCommandLine> listVideoFrom2Img = new List<FfmpegCommandLine>();
+            #endregion;
 
             var groupOrder = 0;
-            #region 2 images to 1 video
-            SplitToRun(fileInputs, (itms, idx) =>
-            {
-                var twoImgTo1Video = Path.Combine(_dirOutput, groupOrder + "img" + "_" + idx + "_" + _fileOutputName);
-
-                var subCmd = BuildFfmpegCommandTransitionXFade(itms[0], itms[1], twoImgTo1Video, timeForEachImage, timeForEachImage, fadeDuration
-                    , _xfadeImageConst[_rnd.Next(0, _xfadeImageConst.Count - 1)]);
-
-                listVideoFrom2Img.Add(new FfmpegCommandLine
-                {
-                    FfmpegCommand = subCmd,
-                    FileOutput = twoImgTo1Video,
-                    GroupOrder = groupOrder
-                });
-
-            }, 2);
-            #endregion
-
+            
             List<FfmpegCommandLine> listAllSubOrderedCmd = new List<FfmpegCommandLine>();
-
-            listAllSubOrderedCmd.AddRange(listVideoFrom2Img);
-
 
             #region combine video one by one
             //line by line merger video into one
             groupOrder = groupOrder + 1;
 
             string latestFileOutputCombined = Path.Combine(_dirOutput, groupOrder + "v" + +0 + "_" + _fileOutputName);
-            var latestTimeVideoDuration = timeForEachImage * 2;
+            var latestTimeVideoDuration = timeForEachImage ;
 
             var subCmd = BuildFfmpegCommandTransitionXFade(new FileInput
             {
-                FullPathFile = listVideoFrom2Img[0].FileOutput,
+                FullPathFile = cmdsPrepare[0].FileOutput,
                 IsVideo = true
             }, new FileInput
             {
-                FullPathFile = listVideoFrom2Img[1].FileOutput,
+                FullPathFile = cmdsPrepare[1].FileOutput,
                 IsVideo = true
             }
-                , latestFileOutputCombined, latestTimeVideoDuration, timeForEachImage * 2, fadeDuration
+                , latestFileOutputCombined, latestTimeVideoDuration, timeForEachImage , fadeDuration
                    , _xfadeImageConst[_rnd.Next(0, _xfadeImageConst.Count - 1)]);
 
             listAllSubOrderedCmd.Add(new FfmpegCommandLine
@@ -294,9 +286,9 @@ namespace Ffmpeg.Core
                 GroupOrder = groupOrder
             });
 
-            latestTimeVideoDuration = latestTimeVideoDuration + (timeForEachImage * 2) - fadeDuration;
+            latestTimeVideoDuration = latestTimeVideoDuration + timeForEachImage  - fadeDuration;
 
-            for (var i = 2; i < listVideoFrom2Img.Count; i++)
+            for (var i = 2; i < cmdsPrepare.Count; i++)
             {
                 var idx = i - 1;
                 groupOrder = groupOrder + 1;
@@ -309,10 +301,10 @@ namespace Ffmpeg.Core
                     IsVideo = true
                 }, new FileInput
                 {
-                    FullPathFile = listVideoFrom2Img[i].FileOutput,
+                    FullPathFile = cmdsPrepare[i].FileOutput,
                     IsVideo = true
                 }
-                    , fileOutput, latestTimeVideoDuration, timeForEachImage * 2, fadeDuration
+                    , fileOutput, latestTimeVideoDuration, timeForEachImage , fadeDuration
                     , _xfadeImageConst[_rnd.Next(0, _xfadeImageConst.Count - 1)]);
 
                 listAllSubOrderedCmd.Add(new FfmpegCommandLine
@@ -323,7 +315,7 @@ namespace Ffmpeg.Core
                 });
 
                 latestFileOutputCombined = fileOutput;
-                latestTimeVideoDuration = latestTimeVideoDuration + (timeForEachImage * 2) - fadeDuration;
+                latestTimeVideoDuration = latestTimeVideoDuration + timeForEachImage  - fadeDuration;
             }
 
             #endregion
@@ -414,6 +406,14 @@ namespace Ffmpeg.Core
             string cmd = $"\"{ffmpegCmd}\" -y";
             string filterFadeIndex = "";
             string filterScaleImage = "";
+
+
+            durationInput0 = Math.Round(durationInput0, 2);
+
+            durationInput1 = Math.Round(durationInput1, 2);
+
+            fadeDuration = Math.Round(fadeDuration, 2);
+
             var offset = durationInput0 - fadeDuration;
 
             if (fileInput0.IsVideo == false)
@@ -426,6 +426,9 @@ namespace Ffmpeg.Core
                 offset = durationInput0 - fadeDuration;
                 cmd += $" -i \"{fileInput0.FullPathFile}\"";
             }
+
+            offset = Math.Round(offset, 2);
+
             if (fileInput1.IsVideo == false)
             {
                 cmd += $" -loop 1 -t {durationInput1 } -i \"{fileInput1.FullPathFile}\"";
@@ -438,8 +441,8 @@ namespace Ffmpeg.Core
             //trick for exactly video duration
             //cmd += $" -t {durationInput0 + durationInput1} -i \"{fileAudioSilence}\"";
 
-            filterScaleImage += $"[0:v]scale={_videoScale}:force_original_aspect_ratio=decrease,pad={_videoScale}:(ow-iw)/2:(oh-ih)/2,setsar=1[v0];";
-            filterScaleImage += $"[1:v]scale={_videoScale}:force_original_aspect_ratio=decrease,pad={_videoScale}:(ow-iw)/2:(oh-ih)/2,setsar=1[v1];";
+            filterScaleImage += $"[0:v]scale={_videoScale}:force_original_aspect_ratio=decrease,pad={_videoScale}:(ow-iw)/2:(oh-ih)/2,setsar=1,{_fps}[v0];";
+            filterScaleImage += $"[1:v]scale={_videoScale}:force_original_aspect_ratio=decrease,pad={_videoScale}:(ow-iw)/2:(oh-ih)/2,setsar=1,{_fps}[v1];";
 
             filterFadeIndex += $"[v0][v1]";
 
@@ -515,19 +518,41 @@ namespace Ffmpeg.Core
             string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
 
             string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
-
+                    
             string cmd = $"\"{ffmpegCmd}\" -y -i \"{fileInput}\" -i \"{fileGift}\" -filter_complex \"[1:v]scale={scale},setsar=1,fade=t=in:st=0:d=1[ovrl];[0:v][ovrl]overlay = {x}:{y}:enable='between(t, {fromSeconds}, {fromSeconds + duration})'\" \"{fileOutput}\"";
             //addOption(['-ignore_loop 0', '-i '+wmimage+ '','-filter_complex [0:v][1:v]overlay=10:10:shortest=1:enable="between(t,2,5)"'])
 
             return cmd;
         }
 
-        string BuildGiftToVideo(string fileInput, string fileOutput)
+        string BuildCmdForGiftToVideo(string fileInput, string fileOutput, decimal duration)
         {
             string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
 
             string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
-            string cmd = $"\"{ffmpegCmd}\" -y -i \"{fileInput}\" -filter_complex \"[0:v]setsar=1[v0];[v0]format=yuv420p[v]\" -map \"[v]\"  \"{fileOutput}\"";
+
+            var fileAudioSilence = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin/silence.mp3");
+
+            var filterScaleImage = $"[0:v]scale={_videoScale}:force_original_aspect_ratio=decrease,pad={_videoScale}:(ow-iw)/2:(oh-ih)/2,setsar=1,{_fps}[v0]";
+
+            string cmd = $"\"{ffmpegCmd}\" -y -t {duration} -i \"{fileInput}\" -t {duration} -i \"{fileAudioSilence}\" -filter_complex \"{filterScaleImage};[v0]format=yuv420p[v]\" -map \"[v]\"  -map 1:a \"{fileOutput}\"";
+
+            return cmd;
+        }
+
+        string BuildCmdForImgToVideo(string fileInput, string fileOutput, decimal duration)
+        {
+            string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
+
+            string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
+
+            var loopInput = $" -loop 1 -t {duration} -i \"{fileInput}\""; 
+            
+            var fileAudioSilence = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin/silence.mp3");
+
+            var filterScaleImage = $"[0:v]scale={_videoScale}:force_original_aspect_ratio=decrease,pad={_videoScale}:(ow-iw)/2:(oh-ih)/2,setsar=1,{_fps}[v0]";
+
+            string cmd = $"\"{ffmpegCmd}\" -y {loopInput} -t {duration} -i \"{fileAudioSilence}\" -filter_complex \"{filterScaleImage};[v0]format=yuv420p[v]\" -map \"[v]\" -map 1:a \"{fileOutput}\"";
 
             return cmd;
         }
