@@ -30,17 +30,37 @@ namespace Ffmpeg.Core
 
             List<string> tempCmd = new List<string>();
 
-            if (cmd.SubFileOutput != null && cmd.SubFileOutput.Count > 0)
+            if (cmd.CommandsToBeforeConvert != null && cmd.CommandsToBeforeConvert.Count > 0)
             {
-                var group = cmd.SubFileOutput.GroupBy(i => i.GroupOrder).Select(m => new { GroupOrder = m.Key, Cmds = m.DefaultIfEmpty() });
-                foreach(var g in group)
+                cmd.CommandsToBeforeConvert.SplitToRun(3, (itms, idx) =>
                 {
-                    g.Cmds.ToList().SplitToRun(3, (itms,idx) =>
+                    List<Task<FfmpegConvertedResult>> cmdTask = new List<Task<FfmpegConvertedResult>>();
+                    foreach (var itm in itms)
+                    {
+                        tempCmd.Add(itm.FfmpegCommand);
+                        cmdTask.Add(Task<FfmpegCommandLine>.Run(() =>
+                        {
+                            return InternalRun(itm.FfmpegCommand, itm.FileOutput);
+                        }));
+                    }
+
+                    Task.WhenAll(cmdTask).GetAwaiter().GetResult();
+                });
+            }
+
+            if (cmd.CommandsToConvert != null && cmd.CommandsToConvert.Count > 0)
+            {
+                var group = cmd.CommandsToConvert.GroupBy(i => i.GroupOrder).Select(m => new { GroupOrder = m.Key, Cmds = m.DefaultIfEmpty() });
+                foreach (var g in group)
+                {
+                    g.Cmds.ToList().SplitToRun(3, (itms, idx) =>
                     {
                         List<Task<FfmpegConvertedResult>> cmdTask = new List<Task<FfmpegConvertedResult>>();
-                        foreach(var itm in itms)
+                        foreach (var itm in itms)
                         {
-                            cmdTask.Add(Task<FfmpegCommandLine>.Run(() => {
+                            tempCmd.Add(itm.FfmpegCommand);
+                            cmdTask.Add(Task<FfmpegCommandLine>.Run(() =>
+                            {
                                 return InternalRun(itm.FfmpegCommand, itm.FileOutput);
                             }));
                         }
@@ -64,7 +84,15 @@ namespace Ffmpeg.Core
 
             Task.Run(() =>
             {
-                foreach (var subCmd in cmd.SubFileOutput)
+                foreach (var subCmd in cmd.CommandsToBeforeConvert)
+                {
+                    try
+                    {
+                        File.Delete(subCmd.FileOutput);
+                    }
+                    catch { }
+                }
+                foreach (var subCmd in cmd.CommandsToConvert)
                 {
                     try
                     {

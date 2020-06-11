@@ -9,15 +9,17 @@ namespace Ffmpeg.Core
 
         public string FfmpegCommand { get; set; }
 
-        public List<FfmpegCommandLine> SubFileOutput { get; set; }
+        public List<FfmpegCommandLine> CommandsToBeforeConvert { get; set; }
+
+        public List<FfmpegCommandLine> CommandsToConvert { get; set; }
 
 
         public bool IsValid()
         {
             if (FfmpegCommand.Length > 8000) return false;
-            if (SubFileOutput == null || SubFileOutput.Count == 0) return true;
+            if (CommandsToConvert == null || CommandsToConvert.Count == 0) return true;
 
-            foreach(var s in SubFileOutput)
+            foreach(var s in CommandsToConvert)
             {
                 if (s.FfmpegCommand.Length > 8000) return false;
             }
