@@ -44,7 +44,7 @@ namespace Ffmpeg.UnitTestConsole
                 }).ToArray())
                 .WithFileOutput(fileOutput)
                 .WithVideoDurationInSeconds(30)
-                //.WithFadeTransition("fadewhite")
+                .WithFadeTransition("fadewhite")
                 .AddFileGif(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageTest/gif/heart.gif"), _rnd.Next(1, 10))
                 .AddFileGif(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageTest/gif/sunset.gif"), _rnd.Next(10, 19))
                 .WithFadeDurationInSeconds(1)
@@ -57,7 +57,8 @@ namespace Ffmpeg.UnitTestConsole
             return new SampleResult
             {
                 ConvertResult = r,
-                FileVideo = fileOutput
+                FileVideo = fileOutput,
+                TotalRunInMiliseconds= r.ConvertInMiliseconds+ r.SubResult.Select(i=>i.ConvertInMiliseconds).Sum()
             };
         }
 
@@ -66,6 +67,8 @@ namespace Ffmpeg.UnitTestConsole
             public string FileVideo { get; set; }
 
             public FfmpegConvertedResult ConvertResult { get; set; }
+
+            public decimal TotalRunInMiliseconds { get; set; }
         }
     }
 }

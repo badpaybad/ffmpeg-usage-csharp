@@ -44,7 +44,7 @@ namespace Ffmpeg.Core
                         }));
                     }
 
-                    Task.WhenAll(cmdTask).GetAwaiter().GetResult();
+                    subResult.AddRange(Task.WhenAll(cmdTask).GetAwaiter().GetResult());
                 });
             }
 
@@ -65,7 +65,7 @@ namespace Ffmpeg.Core
                             }));
                         }
 
-                        Task.WhenAll(cmdTask).GetAwaiter().GetResult();
+                        subResult.AddRange(Task.WhenAll(cmdTask).GetAwaiter().GetResult());
                     });
                 }
                 //foreach (var subCmd in cmd.SubFileOutput)
@@ -180,7 +180,7 @@ namespace Ffmpeg.Core
             }
             return new FfmpegConvertedResult
             {
-                ConvertInMiliseconds = sw.ElapsedMilliseconds - 1000,
+                ConvertInMiliseconds = sw.ElapsedMilliseconds,
                 Output = outstring,
                 Success = isOk,
                 FfmpegCmd = cmdLine

@@ -21,7 +21,7 @@ namespace Ffmpeg.UnitTestConsole
 
               }
               var result = await Task.WhenAll(resultAsync);
-              Console.WriteLine($"Total in miliseconds: {result.Sum(i => i.ConvertResult.ConvertInMiliseconds) + result.Sum(i=>i.ConvertResult.SubResult.Select(i=>i.ConvertInMiliseconds).Sum()) }");
+              Console.WriteLine($"Total in miliseconds: {result.Sum(i => i.TotalRunInMiliseconds)}");
 
               foreach (var r in result)
               {
