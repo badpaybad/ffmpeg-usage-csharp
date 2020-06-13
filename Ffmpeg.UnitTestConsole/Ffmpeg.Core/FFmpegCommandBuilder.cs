@@ -14,7 +14,7 @@ namespace Ffmpeg.Core
         public int Order { get; set; }
         public string FullPathFile { get; set; }
 
-        public bool IsVideo { get; set; }
+        public bool IsVideoOrGif { get; set; }
 
         public string FileName
         {
@@ -26,9 +26,9 @@ namespace Ffmpeg.Core
             }
         }
     }
-    public class GifFileConfig
+    public class ImageOverlayFileConfig
     {
-        public string FileGif;
+        public string FullPathFile;
         public int FromSeconds;
         public int Duration;
         public int Y;
@@ -36,7 +36,7 @@ namespace Ffmpeg.Core
         public int Width;
         public int Height;
         public string Scale;
-
+        public bool IsGif=true;
     }
 
     public class FFmpegCommandBuilder
@@ -115,7 +115,10 @@ namespace Ffmpeg.Core
 
         static Random _rnd = new Random();
 
-        List<GifFileConfig> _fileGif = new List<GifFileConfig>();
+        List<ImageOverlayFileConfig> _fileGifOverlay = new List<ImageOverlayFileConfig>();
+        List<ImageOverlayFileConfig> _fileImageOverlay = new List<ImageOverlayFileConfig>();
+
+        List<ImageOverlayFileConfig> _fileVideo = new List<ImageOverlayFileConfig>();
 
         public FFmpegCommandBuilder()
         {
@@ -147,23 +150,40 @@ namespace Ffmpeg.Core
             _fileAudio = file;
             return this;
         }
-        public FFmpegCommandBuilder AddFileGif(string file, int fromSenconds, int duration = 2, int positionX = 0, int positionY = 0, int width = 0, int height = 0)
+        public FFmpegCommandBuilder AddGifOverlay(string file, int fromSenconds, int duration = 2, int positionX = 0, int positionY = 0, int width = 0, int height = 0)
         {
-            var itm = new GifFileConfig
+            var itm = new ImageOverlayFileConfig
             {
-                FileGif = file,
+                FullPathFile = file,
                 FromSeconds = fromSenconds,
                 Duration = duration,
                 Height = height,
                 Width = width,
                 X = positionX,
-                Y = positionY
+                Y = positionY,
+                IsGif = true
             };
 
-            _fileGif.Add(itm);
+            _fileGifOverlay.Add(itm);
             return this;
         }
+        public FFmpegCommandBuilder AddImageOverLay(string file, int fromSenconds, int duration = 2, int positionX = 0, int positionY = 0, int width = 0, int height = 0)
+        {
+            var itm = new ImageOverlayFileConfig
+            {
+                FullPathFile = file,
+                FromSeconds = fromSenconds,
+                Duration = duration,
+                Height = height,
+                Width = width,
+                X = positionX,
+                Y = positionY,
+                IsGif = false
+            };
 
+            _fileImageOverlay.Add(itm);
+            return this;
+        }
         public FFmpegCommandBuilder WithFileOutput(string file)
         {
             _fileOutput = file;
@@ -270,11 +290,11 @@ namespace Ffmpeg.Core
             var subCmd = BuildFfmpegCommandTransitionXFade(new FileInput
             {
                 FullPathFile = cmdsPrepare[0].FileOutput,
-                IsVideo = true
+                IsVideoOrGif = true
             }, new FileInput
             {
                 FullPathFile = cmdsPrepare[1].FileOutput,
-                IsVideo = true
+                IsVideoOrGif = true
             }
                 , latestFileOutputCombined, latestTimeVideoDuration, timeForEachImage , fadeDuration
                    , _xfadeImageConst[_rnd.Next(0, _xfadeImageConst.Count - 1)]);
@@ -298,11 +318,11 @@ namespace Ffmpeg.Core
                 subCmd = BuildFfmpegCommandTransitionXFade(new FileInput
                 {
                     FullPathFile = latestFileOutputCombined,
-                    IsVideo = true
+                    IsVideoOrGif = true
                 }, new FileInput
                 {
                     FullPathFile = cmdsPrepare[i].FileOutput,
-                    IsVideo = true
+                    IsVideoOrGif = true
                 }
                     , fileOutput, latestTimeVideoDuration, timeForEachImage , fadeDuration
                     , _xfadeImageConst[_rnd.Next(0, _xfadeImageConst.Count - 1)]);
@@ -320,20 +340,20 @@ namespace Ffmpeg.Core
 
             #endregion
 
-            #region build gif additional
+            #region build gif overlay
 
-            if (_fileGif != null && _fileGif.Count > 0)
+            if (_fileGifOverlay != null && _fileGifOverlay.Count > 0)
             {
 
-                for (int i = 0; i < _fileGif.Count; i++)
+                for (int i = 0; i < _fileGifOverlay.Count; i++)
                 {
-                    var f = GifFileConfigCal(_fileGif[i]);
+                    var f = ImageOverlayConfigCal(_fileGifOverlay[i]);
 
                     groupOrder = groupOrder + 1;
 
                     var outputFileWithGif = Path.Combine(_dirOutput, groupOrder + "g" + +i + "_" + _fileOutputName);
 
-                    var gifCmd = BuildGiftOverlayCommand(latestFileOutputCombined, outputFileWithGif, f.FileGif, f.FromSeconds, f.Duration, f.Scale, f.X, f.Y);
+                    var gifCmd = BuildGiftOverlayCommand(latestFileOutputCombined, outputFileWithGif, f.FullPathFile, f.FromSeconds, f.Duration, f.Scale, f.X, f.Y);
 
                     listAllSubOrderedCmd.Add(new FfmpegCommandLine
                     {
@@ -345,6 +365,34 @@ namespace Ffmpeg.Core
                     latestFileOutputCombined = outputFileWithGif;
                 }
 
+            }
+
+            #endregion
+
+            #region build image overlay
+
+            if (_fileImageOverlay != null && _fileImageOverlay.Count > 0)
+            {
+
+                for (int i = 0; i < _fileImageOverlay.Count; i++)
+                {
+                    var f = ImageOverlayConfigCal(_fileImageOverlay[i]);
+
+                    groupOrder = groupOrder + 1;
+
+                    var outputFileWithOverlay = Path.Combine(_dirOutput, groupOrder + "oi" + +i + "_" + _fileOutputName);
+
+                    var overlayCmd = BuildImageOverlayCommand(latestFileOutputCombined, outputFileWithOverlay, f.FullPathFile, f.FromSeconds, f.Duration, f.Scale, f.X, f.Y);
+
+                    listAllSubOrderedCmd.Add(new FfmpegCommandLine
+                    {
+                        GroupOrder = groupOrder,
+                        FileOutput = outputFileWithOverlay,
+                        FfmpegCommand = overlayCmd,
+                    });
+
+                    latestFileOutputCombined = outputFileWithOverlay;
+                }
             }
 
             #endregion
@@ -416,12 +464,12 @@ namespace Ffmpeg.Core
 
             var offset = durationInput0 - fadeDuration;
 
-            if (fileInput0.IsVideo == false)
+            if (fileInput0.IsVideoOrGif == false)
             {
                 offset = durationInput0;
                 cmd += $" -loop 1 -t {durationInput0 + fadeDuration } -i \"{fileInput0.FullPathFile}\"";
             }
-            if (fileInput0.IsVideo == true)
+            if (fileInput0.IsVideoOrGif == true)
             {
                 offset = durationInput0 - fadeDuration;
                 cmd += $" -i \"{fileInput0.FullPathFile}\"";
@@ -429,11 +477,11 @@ namespace Ffmpeg.Core
 
             offset = Math.Round(offset, 2);
 
-            if (fileInput1.IsVideo == false)
+            if (fileInput1.IsVideoOrGif == false)
             {
                 cmd += $" -loop 1 -t {durationInput1 } -i \"{fileInput1.FullPathFile}\"";
             }
-            if (fileInput1.IsVideo == true)
+            if (fileInput1.IsVideoOrGif == true)
             {
                 cmd += $" -i \"{fileInput1.FullPathFile}\"";
             }
@@ -459,14 +507,14 @@ namespace Ffmpeg.Core
             return cmd;
         }
 
-        public GifFileConfig GifFileConfigCal(GifFileConfig f)
+        public ImageOverlayFileConfig ImageOverlayConfigCal(ImageOverlayFileConfig f)
         {
             var arr = _videoScale.Split(':');
 
             var w = int.Parse(arr[0]);
             var h = int.Parse(arr[1]);
-            var temp = new GifFileConfig();
-            temp.FileGif = f.FileGif;
+            var temp = new ImageOverlayFileConfig();
+            temp.FullPathFile = f.FullPathFile;
             temp.FromSeconds = f.FromSeconds;
             temp.Duration = f.Duration;
 
@@ -513,18 +561,28 @@ namespace Ffmpeg.Core
             return temp;
         }
 
-        string BuildGiftOverlayCommand(string fileInput, string fileOutput, string fileGift, int fromSeconds, int duration, string scale, int x, int y)
+        string BuildGiftOverlayCommand(string fileInput, string fileOutput, string fileGiftOverlay, int fromSeconds, int duration, string scale, int x, int y)
         {
             string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
 
             string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
                     
-            string cmd = $"\"{ffmpegCmd}\" -y -i \"{fileInput}\" -i \"{fileGift}\" -filter_complex \"[1:v]scale={scale},setsar=1,fade=t=in:st=0:d=1[ovrl];[0:v][ovrl]overlay = {x}:{y}:enable='between(t, {fromSeconds}, {fromSeconds + duration})'\" \"{fileOutput}\"";
+            string cmd = $"\"{ffmpegCmd}\" -y -i \"{fileInput}\" -i \"{fileGiftOverlay}\" -filter_complex \"[1:v]{_fps},scale={scale},setsar=1,fade=t=in:st=0:d=1[ovrl];[0:v][ovrl]overlay = {x}:{y}:enable='between(t, {fromSeconds}, {fromSeconds + duration})'\" \"{fileOutput}\"";
             //addOption(['-ignore_loop 0', '-i '+wmimage+ '','-filter_complex [0:v][1:v]overlay=10:10:shortest=1:enable="between(t,2,5)"'])
 
             return cmd;
         }
+        string BuildImageOverlayCommand(string fileInput, string fileOutput, string fileImageOverlay, int fromSeconds, int duration, string scale, int x, int y)
+        {
+            string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
 
+            string ffmpegCmd = Path.Combine(dir, "ffmpeg.exe");
+
+            string cmd = $"\"{ffmpegCmd}\" -y -i \"{fileInput}\" -loop 1 -t {duration} -i \"{fileImageOverlay}\" -filter_complex \"[1:v]{_fps},scale={scale},setsar=1,fade=t=in:st=0:d=1[ovrl];[0:v][ovrl]overlay = {x}:{y}:enable='between(t, {fromSeconds}, {fromSeconds + duration})'\" \"{fileOutput}\"";
+            //addOption(['-ignore_loop 0', '-i '+wmimage+ '','-filter_complex [0:v][1:v]overlay=10:10:shortest=1:enable="between(t,2,5)"'])
+
+            return cmd;
+        }
         string BuildCmdForGiftToVideo(string fileInput, string fileOutput, decimal duration)
         {
             string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "window/ffmpeg/bin");
