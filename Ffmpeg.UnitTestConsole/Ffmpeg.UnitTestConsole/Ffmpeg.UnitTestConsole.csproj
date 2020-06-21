@@ -11,10 +11,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ffmpeg.Core\Ffmpeg.Core.csproj" />
+    <ProjectReference Include="..\Ffmpeg.FaceRecognition\Ffmpeg.FaceRecognition.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="ImageTest\audio\3.MP3">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="ImageTest\gif\2.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="ImageTest\gif\heart.gif">
@@ -32,19 +36,58 @@
     <None Update="ImageTest\imgs\beach_tropics_sea_sand_summer_84726_1920x1080.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1124-143519-81-52-PNHXCQ1539964391.jpeg">
+    <None Update="ImageTest\imgs\heart.gif">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1127-142828-0-RK3BGT1539925047.jpeg">
+    <None Update="template1\a.mp3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1127-142828-0-ZTPSPC1539925044.jpeg">
+    <None Update="template1\bag.gif">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1128-143232-19-1539946367.png">
+    <None Update="template1\bg.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1128-143232-9-1539946362.png">
+    <None Update="template1\bg1.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="template1\byebye.mp4">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="template1\car.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="template1\cauvongmaytrang.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="template1\cauvongmayxanh.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="template1\faceboy.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="template1\kcnchill.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="template1\kcnheart.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="template1\kcnphaobong.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="template1\kcntodo.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="template1\khunganh.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="template1\kologo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="template1\kvintro.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="template1\studentface.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
@@ -55,6 +98,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="Emgu.CV.Platform.NetFramework">
+      <HintPath>..\Ffmpeg.FaceRecognition\dll\Emgu.CV.Platform.NetFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="Emgu.CV.Platform.NetStandard">
+      <HintPath>..\Ffmpeg.FaceRecognition\dll\Emgu.CV.Platform.NetStandard.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="ImageTest\imgs\1.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
@@ -62,11 +114,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="ImageTest\imgs\beach_tropics_sea_sand_summer_84726_1920x1080.jpg" />
-    <Resource Include="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1124-143519-81-52-PNHXCQ1539964391.jpeg" />
-    <Resource Include="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1127-142828-0-RK3BGT1539925047.jpeg" />
-    <Resource Include="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1127-142828-0-ZTPSPC1539925044.jpeg" />
-    <Resource Include="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1128-143232-19-1539946367.png" />
-    <Resource Include="ImageTest\imgs\SC-2016-0169-CSC-2016-0169-1128-143232-9-1539946362.png" />
   </ItemGroup>
 
 </Project>

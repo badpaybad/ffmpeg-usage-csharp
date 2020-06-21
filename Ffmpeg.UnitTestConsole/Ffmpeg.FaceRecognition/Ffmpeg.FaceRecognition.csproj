@@ -134,6 +134,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Ffmpeg.Core\Ffmpeg.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="Emgu.CV.Platform.NetFramework">
       <HintPath>dll\Emgu.CV.Platform.NetFramework.dll</HintPath>
     </Reference>

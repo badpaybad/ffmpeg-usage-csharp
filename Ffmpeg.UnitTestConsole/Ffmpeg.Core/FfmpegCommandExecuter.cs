@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -50,29 +51,31 @@ namespace Ffmpeg.Core
 
             if (cmd.CommandsToConvert != null && cmd.CommandsToConvert.Count > 0)
             {
-                var group = cmd.CommandsToConvert.GroupBy(i => i.GroupOrder).Select(m => new { GroupOrder = m.Key, Cmds = m.DefaultIfEmpty() });
-                foreach (var g in group)
-                {
-                    g.Cmds.ToList().SplitToRun(3, (itms, idx) =>
-                    {
-                        List<Task<FfmpegConvertedResult>> cmdTask = new List<Task<FfmpegConvertedResult>>();
-                        foreach (var itm in itms)
-                        {
-                            tempCmd.Add(itm.FfmpegCommand);
-                            cmdTask.Add(Task<FfmpegCommandLine>.Run(() =>
-                            {
-                                return InternalRun(itm.FfmpegCommand, itm.FileOutput);
-                            }));
-                        }
-
-                        subResult.AddRange(Task.WhenAll(cmdTask).GetAwaiter().GetResult());
-                    });
-                }
-                //foreach (var subCmd in cmd.SubFileOutput)
+                //var group = cmd.CommandsToConvert.GroupBy(i => i.GroupOrder).Select(m => new { GroupOrder = m.Key, Cmds = m.DefaultIfEmpty() });
+                //foreach (var g in group)
                 //{
-                //    subResult.Add(InternalRun(subCmd.FfmpegCommand, subCmd.FileOutput));
-                //    tempCmd.Add(subCmd.FfmpegCommand);
+                //    g.Cmds.ToList().SplitToRun(3, (itms, idx) =>
+                //    {
+                //        List<Task<FfmpegConvertedResult>> cmdTask = new List<Task<FfmpegConvertedResult>>();
+                //        foreach (var itm in itms)
+                //        {
+                //            tempCmd.Add(itm.FfmpegCommand);
+                //            cmdTask.Add(Task<FfmpegCommandLine>.Run(() =>
+                //            {
+                //                return InternalRun(itm.FfmpegCommand, itm.FileOutput);
+                //            }));
+                //        }
+
+                //        subResult.AddRange(Task.WhenAll(cmdTask).GetAwaiter().GetResult());
+                //    });
                 //}
+                foreach (var subCmd in cmd.CommandsToConvert)
+                {
+                    FfmpegConvertedResult cmdSubRes = InternalRun(subCmd.FfmpegCommand, subCmd.FileOutput);
+                    cmdSubRes.CommadExecuted = subCmd;
+                    subResult.Add(cmdSubRes);
+                    tempCmd.Add(subCmd.FfmpegCommand);
+                }
             }
             tempCmd.Add(cmd.FfmpegCommand);
 
@@ -81,6 +84,8 @@ namespace Ffmpeg.Core
             var mainCmdResult = InternalRun(cmd.FfmpegCommand, cmd.FileOutput);
 
             mainCmdResult.SubResult = subResult;
+
+            mainCmdResult.CommadExecuted = cmd;
 
             Task.Run(() =>
             {
@@ -130,10 +135,13 @@ namespace Ffmpeg.Core
             cmd.StartInfo.RedirectStandardError = true;
             cmd.StartInfo.UseShellExecute = false;
             cmd.StartInfo.FileName = "cmd.exe";
+            //cmd.StartInfo.StandardErrorEncoding = Encoding.UTF8;
+            //cmd.StartInfo.StandardOutputEncoding = Encoding.Unicode;
+            //cmd.StartInfo.StandardInputEncoding = Encoding.Unicode;
             cmd.Start();
 
             Console.WriteLine($"FfmpegCommandRunner Started: {fileOutput}");
-
+            //cmd.StandardInput.WriteLine("chcp 65001");
             cmd.StandardInput.WriteLine(cmdLine);
             cmd.StandardInput.WriteLine("echo ##done##");
 

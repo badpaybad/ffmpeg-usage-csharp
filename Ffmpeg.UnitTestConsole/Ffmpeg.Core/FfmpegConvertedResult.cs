@@ -15,6 +15,8 @@ namespace Ffmpeg.Core
         public string FfmpegCmd { get;  set; }
 
         public List<FfmpegConvertedResult> SubResult { get; set; }
+
+        public FfmpegCommandLine CommadExecuted { get; set; }
     }
 }
 
