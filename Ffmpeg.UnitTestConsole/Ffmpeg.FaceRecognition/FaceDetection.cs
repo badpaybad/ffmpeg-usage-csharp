@@ -54,7 +54,7 @@ namespace Ffmpeg.FaceRecognition
                 Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FaceTest/haarcascade_frontalface_default.xml")))
             {
                 //Detect the faces  from the gray scale image and store the locations as rectangle                   
-                Rectangle[] facesDetected = faceDetector.DetectMultiScale(faceInput, 1.09, 2, new Size(10, 10));
+                Rectangle[] facesDetected = faceDetector.DetectMultiScale(faceInput, 1.05,2, new Size(20, 20));
 
                 foreach (var r in facesDetected)
                 {
@@ -69,7 +69,7 @@ namespace Ffmpeg.FaceRecognition
                 using (CascadeClassifier eyeDetector = new CascadeClassifier(
            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FaceTest/haarcascade_eye.xml")))
                 {
-                    Rectangle[] eyes = eyeDetector.DetectMultiScale(f.Key, 1.08, 2, new Size(10, 10));
+                    Rectangle[] eyes = eyeDetector.DetectMultiScale(f.Key, 1.05, 2, new Size(20, 20));
                     if (eyes.Length > 0)
                     {
                         founds.Add(f);
@@ -92,7 +92,7 @@ namespace Ffmpeg.FaceRecognition
 
                 //    }
             }
-            if (founds.Count == 0) return faces;
+            //if (founds.Count == 0) return faces;
 
             return founds;
         }
