@@ -331,7 +331,7 @@ namespace Ffmpeg.FaceRecognition
             return resultFound;
         }
 
-        public void TestDnnCaffeModel()
+        public void TestDnnCaffeModelFaceDetection()
         {
             //https://github.com/BVLC/caffe
             //https://github.com/m8/EmguCV-Caffe-Image-Classifier-EmguCV-Object-Detection-
@@ -374,7 +374,7 @@ namespace Ffmpeg.FaceRecognition
 
             //https://github.com/emgucv/emgucv/blob/master/Emgu.CV.Test/AutoTestVarious.cs
             //find face
-            float confidenceThreshold = 0.15f;
+            float confidenceThreshold = 0.14f;
 
             List<Rectangle> faceRegions = new List<Rectangle>();
 

@@ -14,7 +14,7 @@ namespace Ffmpeg.UnitTestConsole
         static void Main(string[] args)
         {
             new FaceDetection().WithInputFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FaceTest/omt2.jpg"))
-                .TestDnnCaffeModel();
+                .TestDnnCaffeModelFaceDetection();
 
             //var xxx = new FaceDetection().WithInputFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FaceTest/omt2.jpg"))
             //     .CompareTo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FaceTest/kien2.png"));
