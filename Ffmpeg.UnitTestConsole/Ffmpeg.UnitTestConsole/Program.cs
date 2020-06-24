@@ -13,15 +13,16 @@ namespace Ffmpeg.UnitTestConsole
     {
         static void Main(string[] args)
         {
+            new FaceDetection().WithInputFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FaceTest/omt2.jpg"))
+                .TestDnnCaffeModel();
 
+            //var xxx = new FaceDetection().WithInputFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FaceTest/omt2.jpg"))
+            //     .CompareTo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FaceTest/kien2.png"));
 
-            var xxx = new FaceDetection().WithInputFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FaceTest/omt2.jpg"))
-                 .CompareTo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FaceTest/kien2.png"));
-
-            foreach (var x in xxx)
-            {
-                x.Face.Save(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"FaceTest/kien2__{(int)x.PredictionResult.Distance}.jpg"));
-            }
+            //foreach (var x in xxx)
+            //{
+            //    x.Face.Save(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"FaceTest/kien2__{(int)x.PredictionResult.Distance}.jpg"));
+            //}
 
             //  Task.Run(async () =>
             //{

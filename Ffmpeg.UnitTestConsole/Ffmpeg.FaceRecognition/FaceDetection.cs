@@ -1,7 +1,9 @@
 ﻿
 using Emgu.CV;
+using Emgu.CV.CvEnum;
 using Emgu.CV.Face;
 using Emgu.CV.Structure;
+using Emgu.CV.Util;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -54,7 +56,7 @@ namespace Ffmpeg.FaceRecognition
                 Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FaceTest/haarcascade_frontalface_default.xml")))
             {
                 //Detect the faces  from the gray scale image and store the locations as rectangle                   
-                Rectangle[] facesDetected = faceDetector.DetectMultiScale(faceInput, 1.05,2, new Size(20, 20));
+                Rectangle[] facesDetected = faceDetector.DetectMultiScale(faceInput, 1.05, 2, new Size(20, 20));
 
                 foreach (var r in facesDetected)
                 {
@@ -316,7 +318,7 @@ namespace Ffmpeg.FaceRecognition
                         Position = facesFromOrigin[i].Value,
                         PredictionResult = new FaceRecognizer.PredictionResult
                         {
-                            Distance =  r2.Distance,
+                            Distance = r2.Distance,
                             Label = r0.Label
                         }
                     });
@@ -328,6 +330,121 @@ namespace Ffmpeg.FaceRecognition
 
             return resultFound;
         }
+
+        public void TestDnnCaffeModel()
+        {
+            //https://github.com/BVLC/caffe
+            //https://github.com/m8/EmguCV-Caffe-Image-Classifier-EmguCV-Object-Detection-
+            //https://raw.githubusercontent.com/opencv/opencv_extra/master/testdata/dnn/bvlc_googlenet.prototxt
+            //https://github.com/BVLC/caffe/tree/master/models/bvlc_googlenet
+
+            //https://github.com/emgucv/emgucv/issues/223
+            Emgu.CV.Dnn.Net netCaffe = Emgu.CV.Dnn.DnnInvoke.ReadNetFromCaffe(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "dnnyolo/deploy.prototxt.txt")
+                , Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "dnnyolo/res10_300x300_ssd_iter_140000.caffemodel"));
+
+            Size size = new Size(300, 300);
+            MCvScalar scalar = new MCvScalar(104, 117, 123);
+
+            Mat blob = Emgu.CV.Dnn.DnnInvoke.BlobFromImage(_imgOrigin.Mat, 0.85, size, scalar);
+
+            netCaffe.SetInput(blob, "data");
+
+            Mat prob = netCaffe.Forward("detection_out");
+            //https://www.died.tw/2017/11/opencv-dnn-speed-compare-in-python-c-c.html
+
+            //string[] Labels = { "background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor" };
+            //MCvScalar[] Colors = new MCvScalar[21];
+            //Random rnd = new Random();
+            //for (int i = 0; i < 21; i++)
+            //{
+            //    Colors[i] = new Rgb(rnd.Next(0, 256), rnd.Next(0, 256), rnd.Next(0, 256)).MCvScalar;
+            //}
+
+            //string[] classNames = ReadClassNames();
+
+            //// GetMaxClass(probBlob, out classId, out classProb);
+            ////Mat matRef = probBlob.MatRef();
+            //Mat probMat = prob.Reshape(1, 1); //reshape the blob to 1x1000 matrix
+            //Point minLoc = new Point(), maxLoc = new Point();
+            //double minVal = 0, maxVal = 0;
+            //CvInvoke.MinMaxLoc(probMat, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
+            //var classId = maxLoc.X;
+
+            //var xxx = "Best class: " + classNames[classId] + ". ClassId: " + classId + ". Probability: " + maxVal;
+
+            //https://github.com/emgucv/emgucv/blob/master/Emgu.CV.Test/AutoTestVarious.cs
+            //find face
+            float confidenceThreshold = 0.15f;
+
+            List<Rectangle> faceRegions = new List<Rectangle>();
+
+            int[] dim = prob.SizeOfDimension;
+            int step = dim[3] * sizeof(float);
+            IntPtr start = prob.DataPointer;
+            for (int i = 0; i < dim[2]; i++)
+            {
+                float[] values = new float[dim[3]];
+                Marshal.Copy(new IntPtr(start.ToInt64() + step * i), values, 0, dim[3]);
+                float confident = values[2];
+
+                if (confident > confidenceThreshold)
+                {
+                    float xLeftBottom = values[3] * _imgOrigin.Cols;
+                    float yLeftBottom = values[4] * _imgOrigin.Rows;
+                    float xRightTop = values[5] * _imgOrigin.Cols;
+                    float yRightTop = values[6] * _imgOrigin.Rows;
+                    RectangleF objectRegion = new RectangleF(xLeftBottom, yLeftBottom, xRightTop - xLeftBottom, yRightTop - yLeftBottom);
+                    Rectangle faceRegion = Rectangle.Round(objectRegion);
+                    faceRegions.Add(faceRegion);
+
+                }
+            }
+
+            //using (FacemarkLBFParams facemarkParam = new Emgu.CV.Face.FacemarkLBFParams())
+            //using (FacemarkLBF facemark = new Emgu.CV.Face.FacemarkLBF(facemarkParam))
+            //using (VectorOfRect vr = new VectorOfRect(faceRegions.ToArray()))
+            //using (VectorOfVectorOfPointF landmarks = new VectorOfVectorOfPointF())
+            //{
+            //    facemark.LoadModel(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "dnnyolo/lbfmodel.yaml"));
+            //    facemark.Fit(_imgOrigin, vr, landmarks);
+
+            //    foreach (Rectangle face in faceRegions)
+            //    {
+            //        CvInvoke.Rectangle(_imgOrigin, face, new MCvScalar(0, 255, 0));
+            //    }
+
+            //    int len = landmarks.Size;
+            //    for (int i = 0; i < landmarks.Size; i++)
+            //    {
+            //        using (VectorOfPointF vpf = landmarks[i])
+            //            FaceInvoke.DrawFacemarks(_imgOrigin, vpf, new MCvScalar(255, 0, 0));
+            //    }
+
+            //}
+
+            //  CvInvoke.Imwrite("rgb_ssd_facedetect.jpg", _imgOrigin);
+
+            //_imgOrigin.Save(_pathFileImgOrigin + $"detected.{_imgOriginFileExt}");
+            foreach(var f in faceRegions)
+            {
+                CircleF circle = new CircleF();
+                float x = (int)(f.X + (f.Width / 2));
+                float y = (int)(f.Y + (f.Height / 2));
+                circle.Radius = f.Width / 2;
+
+                _imgOrigin.Draw(new CircleF(new PointF(x, y), circle.Radius), new Bgr(Color.Yellow), 2);
+
+                _imgOrigin.Draw(f, new Bgr(Color.Red), 3);
+            }
+            _imgOrigin.Save(_pathFileImgOrigin + $"detected.{_imgOriginFileExt}");
+        }
+
+        private string[] ReadClassNames()
+        {
+            string fileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "dnnyolo/synset_words.txt");
+            return File.ReadAllLines(fileName);
+        }
+
     }
 }
 /*        public bool CompareTo(string fileFaceToCompare)
