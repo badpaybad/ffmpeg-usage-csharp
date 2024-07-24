@@ -16,8 +16,10 @@ public class CommandExecuter
         //ffmpeg -i input_video.mp4 -i overlay_image.png -filter_complex 
         //"[0][1]overlay=x=400:y=500:enable='between(t,3,4.5)'" -c:a copy output_video.mp4
         var savetofile = $"{originVideoFilePath}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.{getFileExt(originVideoFilePath)}";
-        var cmd = $"ffmpeg -i \"{originVideoFilePath}\" -i \"{imageOverlayFilePath}\" -filter_complex " +
-        $"\"[0][1]overlay=x={x}:y={y}:enable='between(t,{fromSec},{toSec})'\" -c:a copy \"{savetofile}\"";
+        var cmd = $"ffmpeg -y -i \"{originVideoFilePath}\" -i \"{imageOverlayFilePath}\" -filter_complex " +
+        //"\"[1]format=rgba,geq='r=255:g=255:b=255:a=alpha(0)':a=1[ov]; "+
+        // $"[0][ov]overlay=x={x}:y={y}:enable='between(t,{fromSec},{toSec}):format=rgb'\" -c:a copy \"{savetofile}\"";
+        $"\"[0][1]overlay=x={x}:y={y}:format=auto:enable='between(t,{fromSec},{toSec})'\" -c:a copy \"{savetofile}\"";
 
         return Run(cmd, savetofile);
 

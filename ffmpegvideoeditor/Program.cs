@@ -1,6 +1,14 @@
 ﻿// See https://aka.ms/new-console-template for more information
 Console.WriteLine("Hello, World!");
 
+// if(args.Length<1) {
+
+// Console.WriteLine("ffmpegvideoeditor getframe {atmilisecond} {filevideo} \r\neg: ffmpegvideoeditor getframe 1005 \"/work/dunp.mp4\"");
+
+// Console.WriteLine("ffmpegvideoeditor apply \"fullpathfiledata\" eg: ffmpegvideoeditor apply \"/work/dunp.txt\"");
+//     return;
+// }
+
 var filevid = "/work/datatemp/SOIN/[CSIP] Course 1/Bài 0 - Tổng quan khóa học.mp4";
 var fileblue = "/work/datatemp/SOIN/[CSIP] Course 1/blue.png";
 var filered = "/work/datatemp/SOIN/[CSIP] Course 1/red.png";
