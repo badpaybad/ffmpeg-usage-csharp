@@ -19,7 +19,7 @@ public class CommandExecuter
         var cmd = $"ffmpeg -y -i \"{originVideoFilePath}\" -i \"{imageOverlayFilePath}\" -filter_complex " +
         //"\"[1]format=rgba,geq='r=255:g=255:b=255:a=alpha(0)':a=1[ov]; "+
         // $"[0][ov]overlay=x={x}:y={y}:enable='between(t,{fromSec},{toSec}):format=rgb'\" -c:a copy \"{savetofile}\"";
-        $"\"[0][1]overlay=x={x}:y={y}:format=auto:enable='between(t,{fromSec},{toSec})'\" -c:a copy \"{savetofile}\"";
+        $"\"[0][1]overlay=x={x}:y={y}:format=auto:enable='between(t,{fromSec},{toSec})'\" -c:v libx264 -c:a aac -movflags +faststart \"{savetofile}\"";
 
         return Run(cmd, savetofile);
 
