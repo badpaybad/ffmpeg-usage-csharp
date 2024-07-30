@@ -12,6 +12,7 @@ public class CommandExecuter
     public async Task<FfmpegConvertedResult> DrawOverlay(string originVideoFilePath,
     string imageOverlayFilePath, int x, int y, double fromSec, double toSec)
     {
+        //ffmpeg -y -i "/home/dunp/Videos/3.mp4" -c:v libx264 -profile:v baseline -level:v 4.0 -c:a aac -movflags +faststart "/home/dunp/Videos/4.mp4"
 
         //ffmpeg -i input_video.mp4 -i overlay_image.png -filter_complex 
         //"[0][1]overlay=x=400:y=500:enable='between(t,3,4.5)'" -c:a copy output_video.mp4
@@ -19,7 +20,7 @@ public class CommandExecuter
         var cmd = $"ffmpeg -y -i \"{originVideoFilePath}\" -i \"{imageOverlayFilePath}\" -filter_complex " +
         //"\"[1]format=rgba,geq='r=255:g=255:b=255:a=alpha(0)':a=1[ov]; "+
         // $"[0][ov]overlay=x={x}:y={y}:enable='between(t,{fromSec},{toSec}):format=rgb'\" -c:a copy \"{savetofile}\"";
-        $"\"[0][1]overlay=x={x}:y={y}:format=auto:enable='between(t,{fromSec},{toSec})'\" -c:v libx264 -c:a aac -movflags +faststart \"{savetofile}\"";
+        $"\"[0][1]overlay=x={x}:y={y}:format=auto:enable='between(t,{fromSec},{toSec})',format=yuv420p\" -c:v libx264 -profile:v baseline -level:v 4.0 -c:a aac -movflags +faststart \"{savetofile}\"";
 
         return Run(cmd, savetofile);
 
