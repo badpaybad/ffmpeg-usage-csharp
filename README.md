@@ -61,6 +61,9 @@ ffmpeg -i 20240123_110615.mp4 -vf scale=-1:720 -vcodec h264 -acodec mp3 4.mp4
                     libaom-av1: AV1 (High efficiency, open-source, new and gaining support)
                         Example: -c:v libaom-av1
 
+                    mpeg4video: MPEG-4 (Older,)
+                        Example: -c:v mpeg4
+
                     mpeg2video: MPEG-2 (Older, used for DVDs)
                         Example: -c:v mpeg2video
 
