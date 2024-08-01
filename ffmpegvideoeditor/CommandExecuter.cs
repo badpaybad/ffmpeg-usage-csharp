@@ -43,7 +43,7 @@ public class CommandExecuter
         return filepath.Substring(idx + 1);
     }
 
-    FfmpegConvertedResult Run(string cmdLine, string fileOutput)
+    public FfmpegConvertedResult Run(string cmdLine, string fileOutput)
     {
         try
         {
@@ -136,7 +136,7 @@ public class FfmpegConvertedResult
 
     public string Output { get; set; }
 
-    public string OutputFile{get;set;}
+    public string OutputFile { get; set; }
 
     public long ConvertInMiliseconds { get; set; }
     public string FfmpegCmd { get; set; }
