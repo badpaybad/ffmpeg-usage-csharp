@@ -1,0 +1,4 @@
+" duong dan file ", from second, to second, red or blue, left pix, top pix
+/work/datatemp/SOIN/[CSIP] Course 1/Bài 0 - Tổng quan khóa học.mp4 , 21.5, 25.5, red, 467,969 
+/work/datatemp/SOIN/[CSIP] Course 1/Bài 0 - Tổng quan khóa học.mp4 , 95, 99, red, 467,969 
+/work/datatemp/SOIN/[CSIP] Course 1/Bài 0 - Tổng quan khóa học.mp4 , 115, 125, blue, 473,691 

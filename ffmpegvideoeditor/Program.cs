@@ -21,30 +21,45 @@ var filered = "/work/datatemp/SOIN/[CSIP] Course 1/red.png";
 
 //  await new CommandExecuter().SaveFrame(filevid,25*1000,filevid+".red.png");
 
-var finall = await new SoinApplyMass().Do(filevid, new System.Collections.Generic.List<SoinOverlay>{
+// /work/datatemp/SOIN/[CSIP] Course 1/Bài 0 - Tổng quan khóa học.mp4 , 21.5, 25.5, red,467,969 
+// /work/datatemp/SOIN/[CSIP] Course 1/Bài 0 - Tổng quan khóa học.mp4 , 95, 69, red, 467,969 
+// /work/datatemp/SOIN/[CSIP] Course 1/Bài 0 - Tổng quan khóa học.mp4 , 115, 125, blue, 473,691 
 
-    new SoinOverlay{
-        FromSeconds=21.5,
-        ToSeconds= 25.5,
-        ImageOverlayFilePath= filered,
-        X=467,
-        Y=969
-    },
-    new SoinOverlay{
-        FromSeconds= 60 + 35,
-        ToSeconds= 60 + 39,
-        ImageOverlayFilePath= filered,
-        X=467,
-        Y=969
-    },
-    new SoinOverlay{
-        FromSeconds=60+55,
-        ToSeconds=60+60+5,
-        ImageOverlayFilePath= fileblue,
-        X=473,
-        Y=691
-    },
-});
+// var finall = await new SoinApplyMass().Do(filevid, new System.Collections.Generic.List<SoinOverlay>{
 
-Console.WriteLine("Finnal: " + finall);
+//     new SoinOverlay{
+//         FromSeconds=21.5,
+//         ToSeconds= 25.5,
+//         ImageOverlayFilePath= filered,
+//         X=467,
+//         Y=969
+//     },
+//     new SoinOverlay{
+//         FromSeconds= 60 + 35,
+//         ToSeconds= 60 + 39,
+//         ImageOverlayFilePath= filered,
+//         X=467,
+//         Y=969
+//     },
+//     new SoinOverlay{
+//         FromSeconds=60+55,
+//         ToSeconds=60+60+5,
+//         ImageOverlayFilePath= fileblue,
+//         X=473,
+//         Y=691
+//     },
+// });
+var xxx = new SoinApplyMass();
+var listall = await xxx.Parse("/work/ffmpeg-usage-csharp/ffmpegvideoeditor/videoedit.txt"
+, "/work/ffmpeg-usage-csharp/ffmpegvideoeditor/red.png"
+, "/work/ffmpeg-usage-csharp/ffmpegvideoeditor/blue.png");
+
+foreach (var v in listall)
+{
+
+    var finall = await xxx.Do(v.OriginalVideoFilePath, v.Overlays);
+    Console.WriteLine("Finnal: " + finall);
+
+}
+
 
