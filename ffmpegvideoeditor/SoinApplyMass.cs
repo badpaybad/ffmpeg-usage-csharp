@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 public class SoinApplyMass
 {
 
-    public async Task<List<SoinVideo>> Parse(string filepath, string overlayfilered, string overlayfileblue)
+    public async Task<List<SoinVideo>> Parse(string filepath)
     {
         string alltext = string.Empty;
 
@@ -47,11 +47,17 @@ public class SoinApplyMass
                 allline.Add(existed);
             }
             existed.OriginalVideoFilePath = arr[0];
+            var fileoverlay = getOverlay(arr[3]);
+            if (string.IsNullOrEmpty(fileoverlay))
+            {
+                Console.WriteLine("NOT FOUND overlay for: "+ arr[3]);
+                continue;
+            }
             existed.Overlays.Add(new SoinOverlay
             {
                 FromSeconds = double.Parse(arr[1]),
                 ToSeconds = double.Parse(arr[2]),
-                ImageOverlayFilePath = arr[3].Contains("red", StringComparison.OrdinalIgnoreCase) ? overlayfilered : overlayfileblue,
+                ImageOverlayFilePath = fileoverlay,
                 X = int.Parse(arr[4]),
                 Y = int.Parse(arr[5])
             });
@@ -61,6 +67,27 @@ public class SoinApplyMass
         }
 
         return allline;
+    }
+
+    string getOverlay(string type)
+    {
+        if (type.Contains("bluesmall", StringComparison.OrdinalIgnoreCase))
+        {
+            return "/work/datatemp/SOIN/[CSIP] Course 1/bluesmall.png";
+        }
+        if (type.Contains("blue", StringComparison.OrdinalIgnoreCase))
+        {
+            return "/work/datatemp/SOIN/[CSIP] Course 1/blue.png";
+        }
+        if (type.Contains("redsmall", StringComparison.OrdinalIgnoreCase))
+        {
+            return "/work/datatemp/SOIN/[CSIP] Course 1/red.png";
+        }
+        if (type.Contains("red", StringComparison.OrdinalIgnoreCase))
+        {
+            return "/work/datatemp/SOIN/[CSIP] Course 1/red.png";
+        }
+        return "";
     }
 
 

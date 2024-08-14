@@ -12,6 +12,7 @@ Console.WriteLine("Hello, World!");
 var filevid = "/work/datatemp/SOIN/[CSIP] Course 1/Bài 0 - Tổng quan khóa học.mp4";
 var fileblue = "/work/datatemp/SOIN/[CSIP] Course 1/blue.png";
 var filered = "/work/datatemp/SOIN/[CSIP] Course 1/red.png";
+var filebluesmall = "/work/datatemp/SOIN/[CSIP] Course 1/bluesmall.png";
 // var r1 = await new CommandExecuter().DrawOverlay(filevid, fileblue, 473, 691, 60 + 55, 60 + 60 + 5);
 
 // var r2 = await new CommandExecuter().DrawOverlay(r1.OutputFile, filered, 467, 969, 21.5, 25.5);
@@ -50,9 +51,7 @@ var filered = "/work/datatemp/SOIN/[CSIP] Course 1/red.png";
 //     },
 // });
 var xxx = new SoinApplyMass();
-var listall = await xxx.Parse("/work/ffmpeg-usage-csharp/ffmpegvideoeditor/videoedit.txt"
-, "/work/ffmpeg-usage-csharp/ffmpegvideoeditor/red.png"
-, "/work/ffmpeg-usage-csharp/ffmpegvideoeditor/blue.png");
+var listall = await xxx.Parse("/work/ffmpeg-usage-csharp/ffmpegvideoeditor/videoedit.txt");
 
 foreach (var v in listall)
 {

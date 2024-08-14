@@ -1,4 +1,6 @@
 " duong dan file ", from second, to second, red or blue, left pix, top pix
-/work/datatemp/SOIN/[CSIP] Course 1/Bài 0 - Tổng quan khóa học.mp4 , 21.5, 25.5, red, 467,969 
-/work/datatemp/SOIN/[CSIP] Course 1/Bài 0 - Tổng quan khóa học.mp4 , 95, 99, red, 467,969 
-/work/datatemp/SOIN/[CSIP] Course 1/Bài 0 - Tổng quan khóa học.mp4 , 115, 125, blue, 473,691 
+/work/datatemp/SOIN/[CSIP] Course 1/Bài 1A - Phân biệt Vấn đề xã hội và Nhu cầu xã hội.mp4 , 1, 4, blue, 760,430 
+/work/datatemp/SOIN/[CSIP] Course 1/Bài 1A - Phân biệt Vấn đề xã hội và Nhu cầu xã hội.mp4 , 9, 10, bluesmall, 1032,1021 
+/work/datatemp/SOIN/[CSIP] Course 1/Bài 1A - Phân biệt Vấn đề xã hội và Nhu cầu xã hội.mp4 , 17, 19, red, 647,981 
+/work/datatemp/SOIN/[CSIP] Course 1/Bài 1A - Phân biệt Vấn đề xã hội và Nhu cầu xã hội.mp4 , 492, 496, red, 653,971 
+/work/datatemp/SOIN/[CSIP] Course 1/Bài 1A - Phân biệt Vấn đề xã hội và Nhu cầu xã hội.mp4 , 508, 514, blue, 651,715

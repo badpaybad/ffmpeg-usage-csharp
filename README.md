@@ -11,10 +11,21 @@ Check code usage in this class FfmpegSampleUsageRenderImagesToVideo, Template1Bu
 
 # some commadlines
 
+ffmpeg -i demo.mp4 -vf "fps=10,scale=320:-1:flags=lanczos" -y demo.gif
+
+
 ffmpeg -i 20240123_110615.mp4 -vf scale=-1:720 -c:v libx264 -crf 18 -c:a copy 3.mp4
 
 ffmpeg -i 20240123_110615.mp4 -vf scale=-1:720 -vcodec h264 -acodec mp3 4.mp4
 
+ffmpeg -i "{originVideoFilePath}" -ss 00:00:00.00 -vframes 1 -vf "scale=iw:ih" "{savetofile}";
+
+
+ffmpeg -i "/work/datatemp/SOIN/[CSIP] Course 1/Bài 1A - Phân biệt Vấn đề xã hội và Nhu cầu xã hội.mp4" -ss 00:00:04.00 -vframes 1 -vf "scale=iw:ih" "/work/datatemp/SOIN/[CSIP] Course 1/Bài 1A - Phân biệt Vấn đề xã hội và Nhu cầu xã hội.mp4_4.jpg"
+
+
+
+ffmpeg -i "/work/datatemp/SOIN/[CSIP] Course 1/Bài 1A - Phân biệt Vấn đề xã hội và Nhu cầu xã hội.mp4" -ss 00:00:10.00 -vframes 1 -vf "scale=iw:ih" "/work/datatemp/SOIN/[CSIP] Course 1/Bài 1A - Phân biệt Vấn đề xã hội và Nhu cầu xã hội.mp4_10.jpg"
 
 # compatible to old device but not chrome, firefox
 
